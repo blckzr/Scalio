@@ -33,7 +33,7 @@ Follow these steps to set up the project locally.
    ```bash
    git clone [https://github.com/blckzr/Scalio.git](https://github.com/blckzr/Scalio.git)
 
-   cd Scalio
+   cd Scalio\client
    ```
 
 2. **Install dependencies**
