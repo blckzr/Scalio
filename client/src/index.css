@@ -17,6 +17,12 @@
   --text-btn: 14px;
 }
 
+@layer components {
+  .input-field {
+    @apply w-full pl-10 pr-4 py-3 rounded-lg bg-[#222] border border-accent/20 focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all text-secondary placeholder:text-gray-600;
+  }
+}
+
 body {
   background-color: var(--color-background);
   color: var(--color-secondary);
