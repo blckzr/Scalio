@@ -50,3 +50,55 @@ Follow these steps to set up the project locally.
    ```
 
    The app will run at http://localhost:5173.
+
+## 🐙 Git Configuration
+
+### 🔄 Basic Workflow
+
+**1. Start a new task**
+Make sure your local project is up to date, then create a new branch.
+
+```bash
+git pull
+git checkout -b feature/my-new-feature
+```
+
+**2. Save your changes** Stage your file and create a commit.
+
+```bash
+git add .
+git commit -m "[feat] add amazing new feature"
+git push
+```
+
+**3. Create Pull Request**
+
+1. Go to repository on GitHub
+2. Click "Compare & pull request"
+3. **IMPORTANT:** On the right sidebar, under **"Reviewers"**, you must select Kevin or Joshua as Reviewers.
+4. Click "Create Pull Request".
+
+### 📝 Git Commit Conventions
+
+This project follows the [Conventional Commits](https://www.conventionalcommits.org/) specification. This ensures a clean and readable history.
+
+**Format:** `[type] <short description>`
+
+| Type           | Description                                                                        |
+| :------------- | :--------------------------------------------------------------------------------- |
+| **`feat`**     | A new feature                                                                      |
+| **`fix`**      | A bug fix                                                                          |
+| **`docs`**     | Documentation only changes                                                         |
+| **`style`**    | Changes that do not affect the meaning of the code (formatting, white-space, etc.) |
+| **`refactor`** | A code change that neither fixes a bug nor adds a feature                          |
+| **`perf`**     | A code change that improves performance                                            |
+| **`test`**     | Adding missing tests or correcting existing tests                                  |
+| **`chore`**    | Changes to the build process or auxiliary tools (e.g., updating `package.json`)    |
+
+**Examples:**
+
+```bash
+git commit -m "[feat] implement job search filter"
+git commit -m "[fix] resolve layout issue on mobile"
+git commit -m "[chore] upgrade tailwindcss to v4"
+```
