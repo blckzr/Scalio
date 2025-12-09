@@ -100,7 +100,7 @@ const HomePage = () => {
         </div>
 
         {/* Visual Decoration (Optional) */}
-        <div className="w-full md:w-1/3 bg-gradient-to-br from-primary to-purple-600 h-64 rounded-xl opacity-20 blur-3xl absolute md:relative pointer-events-none"></div>
+        <div className="w-full md:w-1/3 bg-linear-to-br from-primary to-purple-600 h-64 rounded-xl opacity-20 blur-3xl absolute md:relative pointer-events-none"></div>
       </section>
     </div>
   );

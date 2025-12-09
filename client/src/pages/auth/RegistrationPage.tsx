@@ -8,6 +8,8 @@ import {
   Lock,
   Linkedin,
   Globe,
+  EyeOff,
+  Eye,
 } from "lucide-react";
 
 const RegistrationPage = () => {
@@ -186,7 +188,15 @@ const RegistrationPage = () => {
                   placeholder="Create a strong password"
                   className="input-field"
                 />
-                {/* Reuse Eye Toggle logic if you want here */}
+                {/* ADD THIS BUTTON to use setShowPassword */}
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)} // <--- Used here!
+                  className="absolute inset-y-0 right-0 pr-3 flex items-center text-accent hover:text-white cursor-pointer"
+                >
+                  {/* Import Eye/EyeOff from lucide-react first */}
+                  {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                </button>
               </div>
             </div>
 

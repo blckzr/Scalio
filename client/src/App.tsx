@@ -2,15 +2,15 @@ import { Routes, Route, Navigate } from "react-router-dom";
 import MainLayout from "./layouts/MainLayout";
 import ProtectedRoute from "./components/ProtectedRoutes";
 import HomePage from "./pages/HomePage";
-import LoginPage from "./pages/LoginPage";
-import RegistrationPage from "./pages/RegistrationPage";
+import LoginPage from "./pages/auth/LoginPage";
+import RegistrationPage from "./pages/auth/RegistrationPage";
 
 // ---------------------------------------------
 // MOCK AUTH STATE (Replace this with real logic later)
 // ---------------------------------------------
 const user = {
-  isConnected: true, // Change to 'false' to test Login redirect
-  role: "user", // Change to 'admin' to test Admin route
+  isConnected: true,
+  role: "user",
 };
 // ---------------------------------------------
 
