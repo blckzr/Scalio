@@ -4,6 +4,7 @@ import ProtectedRoute from "./components/ProtectedRoutes";
 import HomePage from "./pages/HomePage";
 import LoginPage from "./pages/auth/LoginPage";
 import RegistrationPage from "./pages/auth/RegistrationPage";
+import ForgotPasswordPage from "./pages/auth/ForgotPassword";
 
 // ---------------------------------------------
 // MOCK AUTH STATE (Replace this with real logic later)
@@ -20,6 +21,7 @@ function App() {
       {/* --- PUBLIC ROUTES (Login/Register) --- */}
       <Route path="/login" element={<LoginPage />} />
       <Route path="/registration" element={<RegistrationPage />} />
+      <Route path="/forgot-password" element={<ForgotPasswordPage />} />
 
       {/* --- PROTECTED ROUTES (Must be logged in) --- */}
       <Route element={<ProtectedRoute isAllowed={user.isConnected} />}>
