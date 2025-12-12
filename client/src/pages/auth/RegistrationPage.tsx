@@ -11,11 +11,23 @@ import {
   EyeOff,
   Eye,
 } from "lucide-react";
+import { usePasswordValidation } from "../../hooks/usePasswordValidation";
+import RequirementItem from "../../components/ui/RequirementItem";
 
 const RegistrationPage = () => {
   // We use this to toggle password visibility if needed (reusing logic from Login)
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+
+  // Use the Custom Hook
+  const {
+    password,
+    setPassword,
+    confirmPassword,
+    setConfirmPassword,
+    validations,
+    isFormValid,
+  } = usePasswordValidation();
 
   return (
     // 1. Global Dark Background Container
@@ -159,7 +171,7 @@ const RegistrationPage = () => {
               </div>
             </div>
 
-            {/* --- Row 4: Password --- */}
+            {/* --- PASSWORD SECTION --- */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
               {/* Password Field */}
               <div className="space-y-1">
@@ -177,14 +189,14 @@ const RegistrationPage = () => {
                     type={showPassword ? "text" : "password"}
                     placeholder="Create a strong password"
                     className="input-field"
+                    value={password} // Bind to hook
+                    onChange={(e) => setPassword(e.target.value)} // Bind to hook
                   />
-                  {/* ADD THIS BUTTON to use setShowPassword */}
                   <button
                     type="button"
-                    onClick={() => setShowPassword(!showPassword)} // <--- Used here!
+                    onClick={() => setShowPassword(!showPassword)}
                     className="absolute inset-y-0 right-0 pr-3 flex items-center text-accent hover:text-white cursor-pointer"
                   >
-                    {/* Import Eye/EyeOff from lucide-react first */}
                     {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                   </button>
                 </div>
@@ -199,21 +211,31 @@ const RegistrationPage = () => {
                   <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                     <Lock
                       size={18}
-                      className="text-accent group-focus-within:text-primary transition-colors"
+                      className={`transition-colors ${
+                        // Logic: If they typed something and it doesn't match => Red Icon
+                        confirmPassword && !validations.isMatching
+                          ? "text-red-500"
+                          : "text-accent group-focus-within:text-primary"
+                      }`}
                     />
                   </div>
                   <input
-                    type={showPassword ? "text" : "password"}
+                    type={showConfirmPassword ? "text" : "password"}
                     placeholder="Confirm your password"
-                    className="input-field"
+                    className={`input-field ${
+                      // Logic: If they typed something and it doesn't match => Red Border
+                      confirmPassword && !validations.isMatching
+                        ? "border-red-500 focus:border-red-500 focus:ring-red-500/20"
+                        : ""
+                    }`}
+                    value={confirmPassword} // Bind to hook
+                    onChange={(e) => setConfirmPassword(e.target.value)} // Bind to hook
                   />
-                  {/* ADD THIS BUTTON to use setShowPassword */}
                   <button
                     type="button"
-                    onClick={() => setShowConfirmPassword(!showConfirmPassword)} // <--- Used here!
+                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
                     className="absolute inset-y-0 right-0 pr-3 flex items-center text-accent hover:text-white cursor-pointer"
                   >
-                    {/* Import Eye/EyeOff from lucide-react first */}
                     {showConfirmPassword ? (
                       <EyeOff size={18} />
                     ) : (
@@ -223,6 +245,29 @@ const RegistrationPage = () => {
                 </div>
               </div>
             </div>
+
+            {/* --- PASSWORD REQUIREMENTS CHECKLIST --- */}
+            {password.length > 0 && (
+              <div className="bg-background p-3 rounded-lg border border-white/5 grid grid-cols-2 gap-2 text-xs">
+                <RequirementItem
+                  met={validations.minLength}
+                  text="Min. 8 characters"
+                />
+                <RequirementItem
+                  met={validations.hasUppercase}
+                  text="Uppercase letter"
+                />
+                <RequirementItem
+                  met={validations.hasLowercase}
+                  text="Lowercase letter"
+                />
+                <RequirementItem met={validations.hasNumber} text="Number" />
+                <RequirementItem
+                  met={validations.isMatching}
+                  text="Passwords match"
+                />
+              </div>
+            )}
 
             {/* Submit Button */}
             <button
