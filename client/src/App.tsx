@@ -5,6 +5,10 @@ import HomePage from "./pages/HomePage";
 import LoginPage from "./pages/auth/LoginPage";
 import RegistrationPage from "./pages/auth/RegistrationPage";
 import ForgotPasswordPage from "./pages/auth/ForgotPassword";
+import AboutPage from "./pages/marketing/AboutPage";
+import ContactPage from "./pages/marketing/ContactPage";
+import PrivacyPage from "./pages/marketing/PrivacyPage";
+import TermsPage from "./pages/marketing/TermPage";
 
 // ---------------------------------------------
 // MOCK AUTH STATE (Replace this with real logic later)
@@ -33,6 +37,10 @@ function App() {
             path="/profile"
             element={<h1 className="text-heading">User Profile</h1>}
           />
+          <Route path="/about" element={<AboutPage />} />
+          <Route path="/contact" element={<ContactPage />} />
+          <Route path="/privacy" element={<PrivacyPage />} />
+          <Route path="/term" element={<TermsPage />} />
 
           {/* --- ADMIN ONLY ROUTES --- */}
           {/* Double Check: Must be logged in AND have role 'admin' */}
