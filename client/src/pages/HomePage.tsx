@@ -27,12 +27,6 @@ const HomePage = () => {
           >
             Get Started
           </Link>
-          <Link
-            to="/login"
-            className="border border-gray-600 text-secondary px-8 py-3 rounded-lg font-medium hover:bg-gray-800 transition-colors"
-          >
-            Log In
-          </Link>
         </div>
       </section>
 

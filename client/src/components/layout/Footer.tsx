@@ -1,3 +1,5 @@
+import { Link } from "react-router-dom";
+
 const Footer = () => {
   return (
     <footer className="bg-background border-t border-gray-800 py-8 mt-auto">
@@ -6,12 +8,12 @@ const Footer = () => {
           © {new Date().getFullYear()} Scalio. All rights reserved.
         </p>
         <div className="flex justify-center gap-6 mt-4 text-btn text-secondary">
-          <a href="#" className="hover:text-primary transition">
+          <Link to="/privacy" className="hover:text-primary transition">
             Privacy Policy
-          </a>
-          <a href="#" className="hover:text-primary transition">
+          </Link>
+          <Link to="/term" className="hover:text-primary transition">
             Terms of Service
-          </a>
+          </Link>
         </div>
       </div>
     </footer>
