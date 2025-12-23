@@ -12,10 +12,19 @@ A modern frontend application built with **React**, **TypeScript**, and **Vite**
 
 ## 🛠️ Tech Stack
 
+**Frontend**
+
 - **Core**: [React](https://react.dev/) (v18+)
 - **Build Tool**: [Vite](https://vitejs.dev/)
 - **Language**: [TypeScript](https://www.typescriptlang.org/)
 - **Styling**: Tailwind CSS
+
+**Backend**
+
+- **Runtime**: [NodeJS](https://nodejs.org/)
+- **Framework**: [Express.js](https://nodejs.org/)
+- **ORM**: [Prisma](https://prisma.io/)
+- **Database**: [Supabase](https://supabase.com/) using [PostgreSQL](https://www.postgresql.org/)
 
 ## 📦 Getting Started
 
@@ -32,24 +41,31 @@ Follow these steps to set up the project locally.
 
    ```bash
    git clone [https://github.com/blckzr/Scalio.git](https://github.com/blckzr/Scalio.git)
-
-   cd Scalio\client
    ```
 
-2. **Install dependencies**
+2. **Setup the Client**
 
    ```bash
+   cd client
+
    npm install
 
-   ```
-
-3. **Start the development server**
-
-   ```bash
    npm run dev
    ```
 
-   The app will run at http://localhost:5173.
+   The server will run at http://localhost:5173.
+
+3. **Setup the Server**
+
+   ```bash
+   cd server
+
+   npm install
+
+   npm run dev
+   ```
+
+   The server will run at http://localhost:5000.
 
 ## 🐙 Git Configuration
 
