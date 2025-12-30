@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-
+const contactRoutes = require('./contact.routes');
 router.get('/', (req, res) => {
   res.json({
     message: 'Scalio Backend API',
@@ -10,9 +10,11 @@ router.get('/', (req, res) => {
     endpoints: {
       health: '/health',
       test: '/api/test',
+      contact: '/api/contact',
     },
     
   });
 });
 
+router.use('/contact', contactRoutes);
 module.exports = router;
