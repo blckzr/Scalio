@@ -17,4 +17,5 @@ router.get('/', (req, res) => {
 });
 
 router.use('/contact', contactRoutes);
+router.use('/auth', require('./auth.routes').default);
 module.exports = router;
