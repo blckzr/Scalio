@@ -17,6 +17,7 @@
   "author": "Your Team",
   "license": "ISC",
   "dependencies": {
+    "@octokit/rest": "^22.0.1",
     "@supabase/supabase-js": "^2.39.0",
     "axios": "^1.6.2",
     "bcryptjs": "^2.4.3",
