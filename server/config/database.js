@@ -1,19 +1,22 @@
-const { createClient } = require('@supabase/supabase-js');
-require('dotenv').config();
+const { createClient } = require("@supabase/supabase-js")
+require("dotenv").config()
 
-if (!process.env.SUPABASE_URL || !process.env.SUPABASE_SERVICE_KEY) {
-  throw new Error('Missing Supabase environment variables. Check your .env file.');
+if (!process.env.SUPABASE_URL || !process.env.SUPABASE_ANON_KEY || !process.env.SUPABASE_SERVICE_KEY) {
+  throw new Error("Missing Supabase environment variables. Check your .env file.")
 }
 
-const supabase = createClient(
-  process.env.SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_KEY,  
-  {
-    auth: {
-      autoRefreshToken: true,
-      persistSession: false  
-    }
-  }
-);
+const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_ANON_KEY, {
+  auth: {
+    autoRefreshToken: true,
+    persistSession: false,
+  },
+})
 
-module.exports = supabase;
+const supabaseAdmin = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_KEY, {
+  auth: {
+    autoRefreshToken: false,
+    persistSession: false,
+  },
+})
+
+module.exports = { supabase, supabaseAdmin }
