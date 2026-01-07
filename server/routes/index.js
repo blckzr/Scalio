@@ -3,6 +3,7 @@ const router = express.Router();
 const contactRoutes = require('./contact.routes');
 const importRoutes = require('./import.routes');
 const syncRoutes = require('./sync.routes');
+const marketRoutes = require('./market.routes');
 router.get('/', (req, res) => {
   res.json({
     message: 'Scalio Backend API',
@@ -15,6 +16,7 @@ router.get('/', (req, res) => {
       contact: '/api/contact',
       import: '/api/import',
       sync: '/api/sync',
+      market: '/api/market',
     },
     
   });
@@ -23,5 +25,6 @@ router.get('/', (req, res) => {
 router.use('/contact', contactRoutes);
 router.use('/import', importRoutes);
 router.use('/sync', syncRoutes);
+router.use('/market', marketRoutes);
 
 module.exports = router;
