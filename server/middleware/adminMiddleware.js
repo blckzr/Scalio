@@ -2,7 +2,6 @@ const userService = require("../services/user.service")
 
 const adminMiddleware = async (req, res, next) => {
   try {
-    // authMiddleware should have already set req.user
     if (!req.user || !req.user.id) {
       return res.status(401).json({ message: "Unauthorized" })
     }

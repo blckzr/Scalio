@@ -2,13 +2,11 @@ const userService = require("../services/user.service")
 const asyncHandler = require("../utils/asyncHandler")
 
 const AdminController = {
-  // Get all users
   getAllUsers: asyncHandler(async (req, res) => {
     const users = await userService.getAllUsers()
     res.status(200).json({ users })
   }),
 
-  // Get specific user by ID
   getUserById: asyncHandler(async (req, res) => {
     const { userId } = req.params
 
