@@ -1,4 +1,5 @@
 const { supabase } = require("../config/database")
+const userService = require('../services/user.service')
 const CLIENT_URL = process.env.CLIENT_URL || "http://localhost:5000"
 
 class AuthController {
