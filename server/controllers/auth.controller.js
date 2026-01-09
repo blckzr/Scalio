@@ -17,12 +17,10 @@ class AuthController {
 
       // Validation
       if (!email || !password || !first_name || !last_name) {
-        return res
-          .status(400)
-          .json({
-            message:
-              "All required fields (Name, Email, Password) must be provided.",
-          });
+        return res.status(400).json({
+          message:
+            "All required fields (Name, Email, Password) must be provided.",
+        });
       }
 
       // Send data to Supabase Auth
@@ -123,18 +121,68 @@ class AuthController {
     }
   }
 
+  // 4.5. Resend OTP (Works for Signup or Forgot Password)
+  static async resendOtp(req, res) {
+    try {
+      const { email, type } = req.body; // type can be 'signup' or 'recovery' (forgot password)
+
+      if (!email || !type) {
+        return res
+          .status(400)
+          .json({ message: "Email and type are required." });
+      }
+
+      const { error } = await supabase.auth.resend({
+        type: type, // 'signup' or 'recovery'
+        email: email,
+      });
+
+      if (error) {
+        // Rate limit error is common here
+        return res.status(400).json({ message: error.message });
+      }
+
+      res.status(200).json({ message: "Code resent successfully." });
+    } catch (err) {
+      console.error(err);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  }
+
   // 5. Reset Password
   static async resetPassword(req, res) {
     try {
-      const { access_token, newPassword } = req.body;
-      if (!access_token || !newPassword)
-        return res.status(400).json({ message: "Missing data" });
-      const { error } = await supabase.auth.updateUser(
-        { password: newPassword },
-        { accessToken: access_token }
-      );
-      if (error) return res.status(400).json({ message: error.message });
-      res.status(200).json({ message: "Password updated successfully." });
+      const { email, token, password } = req.body;
+
+      if (!email || !token || !password) {
+        return res
+          .status(400)
+          .json({ message: "Email, Code, and New Password are required." });
+      }
+
+      // This checks if the code is valid for that email
+      const { data, error: verifyError } = await supabase.auth.verifyOtp({
+        email,
+        token,
+        type: "recovery",
+      });
+
+      if (verifyError) {
+        return res
+          .status(400)
+          .json({ message: "Invalid code or code expired." });
+      }
+
+      // Now that the session is verified, we can update the user
+      const { error: updateError } = await supabase.auth.updateUser({
+        password: password,
+      });
+
+      if (updateError) {
+        return res.status(400).json({ message: "Failed to update password." });
+      }
+
+      res.status(200).json({ message: "Password updated successfully!" });
     } catch (err) {
       console.error(err);
       res.status(500).json({ message: "Internal server error" });
@@ -166,12 +214,10 @@ class AuthController {
       });
       if (error || !data.session)
         return res.status(401).json({ message: "Failed to refresh token" });
-      res
-        .status(200)
-        .json({
-          access_token: data.session.access_token,
-          refresh_token: data.session.refresh_token,
-        });
+      res.status(200).json({
+        access_token: data.session.access_token,
+        refresh_token: data.session.refresh_token,
+      });
     } catch (err) {
       console.error(err);
       res.status(500).json({ message: "Internal server error" });
