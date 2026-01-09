@@ -17,6 +17,7 @@
   "author": "Your Team",
   "license": "ISC",
   "dependencies": {
+    "@google/generative-ai": "^0.24.1",
     "@octokit/rest": "^22.0.1",
     "@supabase/supabase-js": "^2.39.0",
     "axios": "^1.13.2",
