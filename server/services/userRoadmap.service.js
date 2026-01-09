@@ -8,7 +8,7 @@ class UserRoadmapService {
 
       const { data: template, error: templateError } = await db
         .from('roadmap_templates')
-        .select('template_id, title, description, source_type, data')
+        .select('template_id, title, description, source_type, roadmap_data')
         .eq('template_id', templateId)
         .eq('version', version)
         .single();
@@ -29,7 +29,7 @@ class UserRoadmapService {
         throw new Error(`User already has an active roadmap for template ${templateId}`);
       }
 
-      const skills = this.extractSkillsFromTemplate(template.data);
+      const skills = this.extractSkillsFromTemplate(template.roadmap_data);
       
       if (!skills || skills.length === 0) {
         throw new Error('No skills found in roadmap template');
@@ -493,6 +493,21 @@ class UserRoadmapService {
     try {
       if (!templateData) return [];
 
+      // Handle nodes/edges structure (from roadmap.sh)
+      if (templateData.nodes && Array.isArray(templateData.nodes)) {
+        const skills = [];
+        templateData.nodes.forEach((node, index) => {
+          if (node.type === 'topic' || node.type === 'subtopic') {
+            skills.push({
+              name: node.data?.label || node.id,
+              order: index + 1
+            });
+          }
+        });
+        if (skills.length > 0) return skills;
+      }
+
+      // Handle flat skills array
       if (Array.isArray(templateData.skills)) {
         return templateData.skills.map((skill, index) => ({
           name: typeof skill === 'string' ? skill : skill.name || skill.skill_name,
@@ -500,6 +515,7 @@ class UserRoadmapService {
         }));
       }
 
+      // Handle modules structure
       if (Array.isArray(templateData.modules)) {
         return templateData.modules.flatMap((module, moduleIndex) => {
           if (Array.isArray(module.skills)) {
@@ -534,14 +550,14 @@ class UserRoadmapService {
     try {
       const { data: oldTemplate } = await db
         .from('roadmap_templates')
-        .select('data')
+        .select('roadmap_data')
         .eq('template_id', templateId)
         .eq('version', oldVersion)
         .single();
 
       const { data: newTemplate } = await db
         .from('roadmap_templates')
-        .select('data')
+        .select('roadmap_data')
         .eq('template_id', templateId)
         .eq('version', newVersion)
         .single();
@@ -550,8 +566,8 @@ class UserRoadmapService {
         return { summary: 'Version comparison unavailable', changes: [], impact: {} };
       }
 
-      const oldSkills = this.extractSkillsFromTemplate(oldTemplate.data).map(s => s.name);
-      const newSkills = this.extractSkillsFromTemplate(newTemplate.data).map(s => s.name);
+      const oldSkills = this.extractSkillsFromTemplate(oldTemplate.roadmap_data).map(s => s.name);
+      const newSkills = this.extractSkillsFromTemplate(newTemplate.roadmap_data).map(s => s.name);
 
       const added = newSkills.filter(s => !oldSkills.includes(s));
       const removed = oldSkills.filter(s => !newSkills.includes(s));

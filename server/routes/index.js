@@ -5,6 +5,7 @@ const importRoutes = require('./import.routes');
 const syncRoutes = require('./sync.routes');
 const marketRoutes = require('./market.routes');
 const userRoadmapRoutes = require('./userRoadmap.routes');
+const roadmapGeneratorRoutes = require('./roadmapGenerator.routes');
 
 router.get('/', (req, res) => {
   res.json({
@@ -20,6 +21,7 @@ router.get('/', (req, res) => {
       sync: '/api/sync',
       market: '/api/market',
       roadmaps: '/api/roadmaps',
+      generateRoadmap: '/api/generate-roadmap',
     },
     
   });
@@ -30,5 +32,6 @@ router.use('/import', importRoutes);
 router.use('/sync', syncRoutes);
 router.use('/market', marketRoutes);
 router.use('/roadmaps', userRoadmapRoutes);
+router.use('/generate-roadmap', roadmapGeneratorRoutes);
 
 module.exports = router;
