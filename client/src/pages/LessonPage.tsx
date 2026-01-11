@@ -4,113 +4,150 @@ import { ArrowLeft, CheckCircle, ChevronRight, Hash } from "lucide-react";
 
 const LessonPage = () => {
   const { courseId } = useParams();
-  const [isCompleted, setIsCompleted] = useState(false);
+  
+  // 1. Generate generic lessons dynamically
+  const [lessons, setLessons] = useState(
+    Array.from({ length: 8 }, (_, i) => ({
+      id: i + 1,
+      name: `Lesson ${String(i + 1).padStart(2, '0')}`,
+      description: `Core concepts and practical application for module ${i + 1}`,
+      completed: false,
+    }))
+  );
 
-  const lessons = [
-    { id: 1, name: "Lesson Name", active: true },
-    { id: 2, name: "Lesson Name", active: false },
-    { id: 3, name: "Lesson Name", active: false },
-    { id: 4, name: "Lesson Name", active: false },
-    { id: 5, name: "Lesson Name", active: false },
-  ];
+  const [activeIndex, setActiveIndex] = useState(0);
+  const currentLesson = lessons[activeIndex];
+
+  // Logic to toggle completion
+  const toggleComplete = () => {
+    const updated = [...lessons];
+    updated[activeIndex].completed = !updated[activeIndex].completed;
+    setLessons(updated);
+  };
+
+  // Calculate Progress
+  const progress = Math.round((lessons.filter(l => l.completed).length / lessons.length) * 100);
 
   return (
     <div className="flex flex-col md:flex-row min-h-[calc(100vh-80px)] text-white bg-[#0a0a0a]">
-      {/* --- LEFT SIDEBAR --- */}
-      <aside className="w-full md:w-80 border-r border-gray-800 p-6 flex flex-col gap-8 bg-[#0d0d0d]">
+      
+      {/* --- SIDEBAR --- */}
+      <aside className="w-full md:w-80 border-r border-zinc-800 p-6 flex flex-col gap-8 bg-[#0d0d0d]">
         <div>
           <Link 
             to={`/learn/${courseId}`} 
-            className="flex items-center gap-2 text-sm text-gray-400 hover:text-white transition-colors mb-6"
+            className="flex items-center gap-2 text-sm text-zinc-500 hover:text-white transition-colors mb-6"
           >
             <ArrowLeft size={16} /> Back to Journey
           </Link>
 
           <div className="space-y-2">
-            <div className="flex justify-between text-sm font-bold">
-              <span>Progress</span>
-              <span className="text-blue-400">20%</span>
+            <div className="flex justify-between text-xs font-bold uppercase tracking-wider">
+              <span className="text-zinc-500">Course Progress</span>
+              <span className="text-blue-500">{progress}%</span>
             </div>
-            <div className="w-full bg-gray-800 h-2 rounded-full overflow-hidden">
-              <div className="bg-blue-500 h-full w-[20%]" />
+            <div className="w-full bg-zinc-800 h-1.5 rounded-full overflow-hidden">
+              <div 
+                className="bg-blue-600 h-full transition-all duration-500 ease-out" 
+                style={{ width: `${progress}%` }} 
+              />
             </div>
           </div>
         </div>
 
-        <nav className="flex flex-col gap-2">
-          {lessons.map((lesson) => (
+        <nav className="flex flex-col gap-1">
+          {lessons.map((lesson, index) => (
             <button
               key={lesson.id}
-              className={`flex items-center gap-3 p-3 rounded-xl text-sm font-medium transition-all text-left ${
-                lesson.active 
-                ? "bg-[#1a1a1a] text-white border border-gray-700 shadow-lg" 
-                : "text-gray-500 hover:text-gray-300"
+              onClick={() => setActiveIndex(index)}
+              className={`flex items-center gap-3 p-3 rounded-xl text-sm transition-all text-left group ${
+                activeIndex === index 
+                ? "bg-zinc-900 text-white border border-zinc-800" 
+                : "text-zinc-500 hover:bg-zinc-900/50 hover:text-zinc-300 border border-transparent"
               }`}
             >
-              <div className={`p-1 rounded ${lesson.active ? "bg-blue-500 text-white" : "bg-gray-800 text-gray-600"}`}>
+              <div className={`p-1.5 rounded-lg transition-colors ${
+                activeIndex === index ? "bg-blue-600 text-white" : "bg-zinc-800 text-zinc-600 group-hover:bg-zinc-700"
+              }`}>
                 <Hash size={14} />
               </div>
-              {lesson.name}
+              <span className="font-medium">{lesson.name}</span>
+              {lesson.completed && <CheckCircle size={14} className="text-emerald-500 ml-auto" />}
             </button>
           ))}
         </nav>
       </aside>
 
-      {/* --- MAIN CONTENT AREA --- */}
-      <main className="flex-1 p-8 md:p-16 max-w-4xl mx-auto">
-        <div className="flex flex-wrap gap-3 mb-4">
-          <span className="px-3 py-1 bg-[#1a1a1a] text-[10px] font-bold text-gray-400 rounded-md border border-gray-800 uppercase">
-            In Progress
+      {/* --- MAIN CONTENT --- */}
+      <main className="flex-1 p-8 md:p-16 max-w-5xl mx-auto w-full">
+        <div className="flex items-center gap-4 mb-6">
+          <span className="px-3 py-1 bg-zinc-900 text-[10px] font-bold text-zinc-500 rounded border border-zinc-800 uppercase tracking-tighter">
+            Module {currentLesson.id}
           </span>
-          <span className="px-3 py-1 text-[10px] font-bold text-blue-400 uppercase">
-            Beginner
+          <div className="h-1 w-1 bg-zinc-700 rounded-full" />
+          <span className="text-[10px] font-bold text-blue-500 uppercase tracking-widest">
+            Topic Overview
           </span>
         </div>
 
-        <h1 className="text-4xl font-bold mb-2">Lesson Name</h1>
-        <p className="text-gray-500 mb-8 font-medium">Lesson Description</p>
+        <h1 className="text-5xl font-bold mb-3 tracking-tight">{currentLesson.name}</h1>
+        <p className="text-zinc-500 text-lg mb-10">{currentLesson.description}</p>
 
         <button 
-          onClick={() => setIsCompleted(!isCompleted)}
-          className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-bold transition-all mb-12 border ${
-            isCompleted 
-            ? "bg-green-500/10 border-green-500 text-green-500" 
-            : "bg-blue-500 border-blue-500 text-white hover:bg-blue-400"
+          onClick={toggleComplete}
+          className={`flex items-center gap-2 px-6 py-2.5 rounded-lg text-sm font-bold transition-all mb-16 border shadow-lg ${
+            currentLesson.completed 
+            ? "bg-emerald-500/5 border-emerald-500/50 text-emerald-500" 
+            : "bg-blue-600 border-blue-500 text-white hover:bg-blue-500 shadow-blue-600/10"
           }`}
         >
           <CheckCircle size={18} />
-          {isCompleted ? "Completed" : "Mark as Done"}
+          {currentLesson.completed ? "Marked as Finished" : "Complete Lesson"}
         </button>
 
-        <section className="space-y-6 text-gray-300 leading-relaxed">
-          <h2 className="text-xl font-bold text-white">Lesson Header</h2>
-          <p>
-            Lorem ipsum dolor sit amet consectetur adipiscing elit. Quisque faucibus ex sapien vitae pellentesque sem placerat. In id cursus mi pretium tellus duis convallis. Tempus leo eu aenean sed diam urna tempor. Pulvinar vivamus fringilla lacus nec metus bibendum egestas.
-          </p>
-          <p>
-            Lorem ipsum dolor sit amet consectetur adipiscing elit. Quisque faucibus ex sapien vitae pellentesque sem placerat. In id cursus mi pretium tellus duis convallis. Tempus leo eu aenean sed diam urna tempor. Pulvinar vivamus fringilla lacus nec metus bibendum egestas.
-          </p>
-        </section>
-
-        <section className="mt-10">
-          <h3 className="font-bold text-white mb-4">Video Link:</h3>
-          <ul className="space-y-2">
-            {['link', 'link', 'link'].map((link, i) => (
-              <li key={i} className="flex items-center gap-2 text-blue-400 hover:underline cursor-pointer">
-                • {link}
-              </li>
-            ))}
-          </ul>
-        </section>
-
-        <div className="mt-20 pt-8 border-t border-gray-800 flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
-          <div>
-            <p className="text-xs text-gray-500 uppercase font-bold tracking-widest mb-1">Next Stop</p>
-            <p className="text-xl font-bold text-blue-400">Lesson Name</p>
+        <article className="prose prose-invert max-w-none space-y-8 text-zinc-400">
+          <div className="space-y-4">
+            <h3 className="text-xl font-bold text-white">Objective</h3>
+            <p className="leading-relaxed">
+              In this lesson, we will cover the fundamental concepts of {currentLesson.name.toLowerCase()}. 
+              The goal is to provide a comprehensive understanding of the workflow and best practices associated 
+              with this specific stage of the roadmap.
+            </p>
           </div>
-          <button className="flex items-center gap-2 bg-blue-500 hover:bg-blue-400 text-white px-6 py-3 rounded-xl font-bold transition-all shadow-lg shadow-blue-500/20 group">
-            Next Module <ChevronRight size={20} className="group-hover:translate-x-1 transition-transform" />
-          </button>
+          
+          <div className="p-6 bg-zinc-900/50 border border-zinc-800 rounded-2xl">
+            <h4 className="text-white font-bold mb-3">Key Resources</h4>
+            <ul className="space-y-3">
+              {['Documentation Link', 'Resource Guide', 'External Video'].map((item, i) => (
+                <li key={i} className="flex items-center gap-3 text-blue-400 hover:text-blue-300 cursor-pointer text-sm">
+                  <div className="w-1.5 h-1.5 bg-blue-500 rounded-full" />
+                  {item}
+                </li>
+              ))}
+            </ul>
+          </div>
+        </article>
+
+        {/* Dynamic Footer Navigation */}
+        <div className="mt-24 pt-10 border-t border-zinc-800 flex flex-col sm:flex-row justify-between items-center gap-8">
+          {activeIndex < lessons.length - 1 ? (
+            <>
+              <div className="text-center sm:text-left">
+                <p className="text-[10px] text-zinc-600 uppercase font-black tracking-[0.2em] mb-2">Up Next</p>
+                <p className="text-2xl font-bold text-white">{lessons[activeIndex + 1].name}</p>
+              </div>
+              <button 
+                onClick={() => setActiveIndex(activeIndex + 1)}
+                className="flex items-center gap-3 bg-white text-black px-8 py-4 rounded-2xl font-bold hover:bg-zinc-200 transition-all group"
+              >
+                Continue <ChevronRight size={20} className="group-hover:translate-x-1 transition-transform" />
+              </button>
+            </>
+          ) : (
+            <div className="w-full p-8 bg-blue-600/10 border border-blue-500/20 rounded-3xl text-center">
+              <p className="text-blue-400 font-bold italic">Congratulations! You've completed all lessons in this module.</p>
+            </div>
+          )}
         </div>
       </main>
     </div>
