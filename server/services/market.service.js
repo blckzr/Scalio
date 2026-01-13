@@ -4,92 +4,17 @@ const logger = require('../utils/logger');
 
 class MarketService {
   constructor() {
-    this.adzunaConfig = {
-      appId: process.env.ADZUNA_APP_ID,
-      apiKey: process.env.ADZUNA_API_KEY,
-      baseUrl: 'https://api.adzuna.com/v1/api/jobs',
-      country: 'ph',
-    };
-
-    this.careerjetConfig = {
-      affid: process.env.CAREERJET_AFFID,
-      baseUrl: 'https://public.api.careerjet.net/search',
-      locale: 'en_PH',
-    };
-
     this.joobleConfig = {
       apiKey: process.env.JOOBLE_API_KEY,
       baseUrl: 'https://jooble.org/api',
     };
+
+    this.serpApiConfig = {
+      apiKey: process.env.SERPAPI_API_KEY,
+      baseUrl: 'https://serpapi.com/search',
+    };
   }
 
-  /**
-   * Fetch jobs from Adzuna API (Philippines)
-   */
-  async fetchAdzunaJobs(skill, page = 1) {
-    try {
-      if (!this.adzunaConfig.appId || !this.adzunaConfig.apiKey) {
-        logger.warn('Adzuna API credentials not configured');
-        return { jobs: [], total: 0 };
-      }
-
-      const url = `${this.adzunaConfig.baseUrl}/${this.adzunaConfig.country}/search/${page}`;
-      const params = {
-        app_id: this.adzunaConfig.appId,
-        app_key: this.adzunaConfig.apiKey,
-        what: skill,
-        results_per_page: 50,
-        'content-type': 'application/json',
-      };
-
-      const response = await axios.get(url, { params });
-      
-      return {
-        jobs: response.data.results || [],
-        total: response.data.count || 0,
-        source: 'adzuna',
-      };
-    } catch (error) {
-      logger.error(`Adzuna API error for skill "${skill}":`, error.message);
-      return { jobs: [], total: 0, error: error.message };
-    }
-  }
-
-  /**
-   * Fetch jobs from Careerjet API (Philippines)
-   */
-  async fetchCareerjetJobs(skill, page = 1) {
-    try {
-      if (!this.careerjetConfig.affid) {
-        logger.warn('Careerjet API credentials not configured');
-        return { jobs: [], total: 0 };
-      }
-
-      const params = {
-        affid: this.careerjetConfig.affid,
-        locale_code: this.careerjetConfig.locale,
-        keywords: skill,
-        location: 'Philippines',
-        page,
-        pagesize: 50,
-      };
-
-      const response = await axios.get(this.careerjetConfig.baseUrl, { params });
-      
-      return {
-        jobs: response.data.jobs || [],
-        total: response.data.hits || 0,
-        source: 'careerjet',
-      };
-    } catch (error) {
-      logger.error(`Careerjet API error for skill "${skill}":`, error.message);
-      return { jobs: [], total: 0, error: error.message };
-    }
-  }
-
-  /**
-   * Fetch jobs from Jooble API (Philippines)
-   */
   async fetchJoobleJobs(skill, page = 1) {
     try {
       if (!this.joobleConfig.apiKey) {
@@ -119,24 +44,80 @@ class MarketService {
     }
   }
 
-  /**
-   * Aggregate job data from all sources for a skill
-   */
+  async fetchSerpApiJobs(skill, page = 1) {
+    try {
+      if (!this.serpApiConfig.apiKey || this.serpApiConfig.apiKey === 'your_serpapi_key_here') {
+        logger.warn('SerpApi API credentials not configured');
+        return { jobs: [], total: 0 };
+      }
+
+      const params = {
+        api_key: this.serpApiConfig.apiKey,
+        engine: 'google_jobs',
+        q: skill,
+        location: 'Philippines',
+        hl: 'en',
+        gl: 'ph',
+      };
+
+      if (page > 1) {
+        params.start = (page - 1) * 10;
+      }
+
+      logger.info('SerpApi request:', { url: this.serpApiConfig.baseUrl, params: { ...params, api_key: params.api_key?.substring(0, 10) + '...' } });
+      const response = await axios.get(this.serpApiConfig.baseUrl, { params });
+      
+      const jobs = response.data.jobs_results || [];
+      const jobsWithSalary = jobs.map(job => {
+        let salaryMin = null;
+        let salaryMax = null;
+
+        if (job.detected_extensions?.salary) {
+          const salaryText = job.detected_extensions.salary;
+          const numbers = salaryText.match(/[\d,]+/g);
+          if (numbers && numbers.length >= 2) {
+            salaryMin = parseFloat(numbers[0].replace(/,/g, ''));
+            salaryMax = parseFloat(numbers[1].replace(/,/g, ''));
+          } else if (numbers && numbers.length === 1) {
+            const salary = parseFloat(numbers[0].replace(/,/g, ''));
+            salaryMin = salary;
+            salaryMax = salary;
+          }
+        }
+
+        return {
+          ...job,
+          salary_min: salaryMin,
+          salary_max: salaryMax,
+        };
+      });
+
+      return {
+        jobs: jobsWithSalary,
+        total: response.data.search_information?.total_results || jobs.length,
+        source: 'serpapi',
+      };
+    } catch (error) {
+      logger.error(`SerpApi error for skill "${skill}":`, error.message);
+      if (error.response) {
+        logger.error('SerpApi error response:', { status: error.response.status, data: error.response.data });
+      }
+      return { jobs: [], total: 0, error: error.message };
+    }
+  }
+
   async aggregateSkillDemand(skill) {
     try {
       logger.info(`Aggregating demand for skill: ${skill}`);
 
-      const [adzuna, careerjet, jooble] = await Promise.all([
-        this.fetchAdzunaJobs(skill),
-        this.fetchCareerjetJobs(skill),
+      const [jooble, serpapi] = await Promise.all([
         this.fetchJoobleJobs(skill),
+        this.fetchSerpApiJobs(skill),
       ]);
 
-      // Calculate total job count
-      const totalJobs = adzuna.total + careerjet.total + jooble.total;
+      const totalJobs = (jooble?.total || 0) + (serpapi?.total || 0);
 
-      // Extract salary data from Adzuna (best source for PH salaries)
-      const salaries = adzuna.jobs
+      const serpapiSalaries = (serpapi?.jobs || [])
         .filter(job => job.salary_min && job.salary_max)
         .map(job => ({
           min: job.salary_min,
@@ -144,8 +125,9 @@ class MarketService {
           avg: (job.salary_min + job.salary_max) / 2,
         }));
 
-      const avgSalary = salaries.length > 0
-        ? salaries.reduce((sum, s) => sum + s.avg, 0) / salaries.length
+      const allSalaries = serpapiSalaries;
+      const avgSalary = allSalaries.length > 0
+        ? allSalaries.reduce((sum, s) => sum + s.avg, 0) / allSalaries.length
         : null;
 
       // Calculate demand score (0-100)
@@ -157,9 +139,8 @@ class MarketService {
         avg_salary: avgSalary ? Math.round(avgSalary) : null,
         demand_score: demandScore,
         sources: {
-          adzuna: adzuna.total,
-          careerjet: careerjet.total,
-          jooble: jooble.total,
+          jooble: jooble?.total || 0,
+          serpapi: serpapi?.total || 0,
         },
         timestamp: new Date().toISOString(),
       };
@@ -169,23 +150,15 @@ class MarketService {
     }
   }
 
-  /**
-   * Calculate demand score (0-100) based on job count
-   */
   calculateDemandScore(jobCount) {
     if (jobCount === 0) return 0;
     if (jobCount >= 1000) return 100;
     
-    // Logarithmic scale for better distribution
     return Math.min(100, Math.round((Math.log10(jobCount + 1) / Math.log10(1000)) * 100));
   }
 
-  /**
-   * Store skill demand data in database
-   */
   async storeSkillDemand(skillName, demandData) {
     try {
-      // Find or create skill
       const { data: existingSkill } = await db
         .from('Skills')
         .select('skill_id')
@@ -211,27 +184,36 @@ class MarketService {
         skillId = existingSkill.skill_id;
       }
 
-      // Upsert skill_demand
-      const { data: result, error: upsertError } = await db
+      // Delete existing record for this skill (if any)
+      await db
         .from('skill_demand')
-        .upsert({
+        .delete()
+        .eq('skill_id', skillId);
+      
+      // Insert new demand data with data_sources as JSONB
+      const { data: result, error: insertError} = await db
+        .from('skill_demand')
+        .insert({
           skill_id: skillId,
           job_count: demandData.job_count,
           avg_salary: demandData.avg_salary,
           demand_score: demandData.demand_score,
-          data_sources: demandData.sources,
+          data_sources: demandData.sources, 
           last_updated: new Date().toISOString()
-        }, {
-          onConflict: 'skill_id'
         })
         .select()
         .single();
-
-      if (upsertError) {
-        throw upsertError;
+      
+      if (insertError) {
+        logger.error(`Insert error for ${skillName}:`, {
+          error: insertError,
+          skillId,
+          demandData
+        });
+        throw insertError;
       }
-
-      logger.info(`Stored demand data for ${skillName} (${demandData.job_count} jobs)`);
+      
+      logger.info(`Stored demand data for ${skillName} (${demandData.job_count} jobs, score: ${demandData.demand_score})`);
       return result;
     } catch (error) {
       logger.error(`Error storing skill demand for ${skillName}:`, error);
@@ -239,14 +221,10 @@ class MarketService {
     }
   }
 
-  /**
-   * Sync demand data for all skills in database
-   */
   async syncAllSkillsDemand() {
     try {
       logger.info('Starting full skill demand sync...');
 
-      // Get all skills from database
       const { data: skills, error: skillsError } = await db
         .from('Skills')
         .select('skill_id, skill_name')
@@ -274,7 +252,6 @@ class MarketService {
             demand_score: demandData.demand_score,
           });
 
-          // Rate limiting: wait 2 seconds between requests
           await new Promise(resolve => setTimeout(resolve, 2000));
         } catch (error) {
           logger.error(`Failed to sync ${skill.skill_name}:`, error.message);
@@ -297,12 +274,8 @@ class MarketService {
     }
   }
 
-  /**
-   * Get skill demand data from database
-   */
   async getSkillDemand(skillName) {
     try {
-      // First, get the skill
       const { data: skill, error: skillError } = await db
         .from('Skills')
         .select('skill_id, skill_name')
@@ -313,7 +286,6 @@ class MarketService {
         return null;
       }
 
-      // Then get the demand data
       const { data: demandData, error: demandError } = await db
         .from('skill_demand')
         .select('job_count, avg_salary, demand_score, data_sources, last_updated')
@@ -334,12 +306,8 @@ class MarketService {
     }
   }
 
-  /**
-   * Get top in-demand skills
-   */
   async getTopSkills(limit = 20) {
     try {
-      // Get top demand records
       const { data: demandRecords, error: demandError } = await db
         .from('skill_demand')
         .select('skill_id, job_count, avg_salary, demand_score, last_updated')
@@ -351,7 +319,6 @@ class MarketService {
         return [];
       }
 
-      // Get skill names for each record
       const skillIds = demandRecords.map(r => r.skill_id);
       const { data: skills, error: skillError } = await db
         .from('Skills')
@@ -363,7 +330,6 @@ class MarketService {
         return [];
       }
 
-      // Combine the data
       const skillMap = {};
       skills.forEach(s => {
         skillMap[s.skill_id] = s.skill_name;
