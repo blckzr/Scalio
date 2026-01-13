@@ -7,6 +7,7 @@ const routes = require("./routes");
 const errorHandler = require("./middleware/errorHandler");
 const logger = require("./utils/logger");
 
+
 // Debug imports
 console.log("routes:", typeof routes);
 console.log("errorHandler:", typeof errorHandler);
@@ -21,6 +22,16 @@ app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(morgan("dev"));
+
+
+// Routes
+const userRoutes = require('./routes/user.routes');
+const adminRoutes = require('./routes/admin.routes');
+const authRoutes = require('./routes/auth.routes');
+
+app.use('/api/users', userRoutes);
+app.use('/api/admin', adminRoutes);
+app.use('/api/auth', authRoutes);
 
 // Health check endpoint
 app.get("/health", (req, res) => {
@@ -59,5 +70,7 @@ app.listen(PORT, () => {
   logger.info(`Environment: ${process.env.NODE_ENV || "development"}`);
   logger.info(`Base URL: http://localhost:${PORT}`);
 });
+
+
 
 module.exports = app;

@@ -1,11 +1,17 @@
 const express = require('express');
 const router = express.Router();
-const contactRoutes = require('./contact.routes');
+const contactRoutes = require('../routes/contact.routes');
 const importRoutes = require('./import.routes');
 const syncRoutes = require('./sync.routes');
 const marketRoutes = require('./market.routes');
 const userRoadmapRoutes = require('./userRoadmap.routes');
 const roadmapGeneratorRoutes = require('./roadmapGenerator.routes');
+
+const userRoutes = require("./user.routes")
+const adminRoutes = require("./admin.routes")
+const authRoutes = require("./auth.routes")
+
+
 
 router.get('/', (req, res) => {
   res.json({
@@ -34,4 +40,7 @@ router.use('/market', marketRoutes);
 router.use('/roadmaps', userRoadmapRoutes);
 router.use('/generate-roadmap', roadmapGeneratorRoutes);
 
+router.use("/users", userRoutes)
+router.use("/admin", adminRoutes)
+router.use("/auth", authRoutes)
 module.exports = router;
