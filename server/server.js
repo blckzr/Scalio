@@ -28,10 +28,19 @@ app.use(morgan("dev"));
 const userRoutes = require('./routes/user.routes');
 const adminRoutes = require('./routes/admin.routes');
 const authRoutes = require('./routes/auth.routes');
+const pathRoutes = require("./routes/paths.routes");
+const lessonRoutes = require("./routes/lessons.routes");
+const progressRoutes = require("./routes/progress.routes");
+const studySessionRoutes = require("./routes/studySessions.routes");
+
 
 app.use('/api/users', userRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/auth', authRoutes);
+app.use("/api/paths", pathRoutes);
+app.use("/api/lessons", lessonRoutes);
+app.use("/api/progress", progressRoutes);
+app.use("/api/sessions", studySessionRoutes);
 
 // Health check endpoint
 app.get("/health", (req, res) => {
