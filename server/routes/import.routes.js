@@ -45,7 +45,6 @@ const validateRoadmapImport = [
   body("source_type")
     .optional()
     .isIn([
-      // Level 1: Official Documentation Sources
       "roadmap.sh",
       "microsoft-learn",
       "google-developers",
@@ -53,7 +52,6 @@ const validateRoadmapImport = [
       "meta-react",
       "freecodecamp",
       "tesda-digital",
-      // Admin/Other
       "custom",
       "imported"
     ])
@@ -65,8 +63,23 @@ const validateRoadmapImport = [
     .withMessage("Invalid source URL"),
 ];
 
-// All import routes require admin authentication
+
 router.post("/roadmap", requireAdmin, validateRoadmapImport, importController.importRoadmap);
+
+router.post("/with-intelligence", requireAdmin, validateRoadmapImport, importController.importWithIntelligence);
+
+router.post("/analyze", requireAdmin, [
+  body("roadmap_data")
+    .notEmpty()
+    .withMessage("Roadmap data is required")
+    .isObject()
+    .withMessage("Roadmap data must be a valid JSON object")
+], importController.analyzeRoadmap);
+
+router.post("/publish/:template_id", requireAdmin, [
+  body("admin_notes").optional().isString().withMessage("Admin notes must be a string"),
+  body("skill_changes").optional().isArray().withMessage("Skill changes must be an array")
+], importController.publishRoadmap);
 
 router.post("/validate", requireAdmin, importController.validateRoadmap);
 

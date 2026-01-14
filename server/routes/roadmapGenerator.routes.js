@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const { controller, validation } = require('../controllers/roadmapGenerator.controller');
-const authMiddleware = require('../middleware/auth');
+const { authMiddleware } = require('../middleware/authMiddleware');
 
 
 router.post(

@@ -15,7 +15,7 @@ class RoadmapGeneratorController {
       }
 
       const { learning_goal, current_skills, hours_per_week, experience_level } = req.body;
-      const user_id = req.user.user_id; // Changed from req.user.id
+      const user_id = req.user.user_id; 
 
       logger.info(`Roadmap generation request`, {
         user_id,

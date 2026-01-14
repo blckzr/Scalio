@@ -2,9 +2,6 @@ const marketService = require('../services/market.service');
 const { successResponse, errorResponse } = require('../utils/responseFormatter');
 const logger = require('../utils/logger');
 
-/**
- * Trigger skill demand sync for all skills
- */
 const syncSkillDemand = async (req, res) => {
   try {
     logger.info('Manual skill demand sync triggered by admin');
@@ -23,9 +20,6 @@ const syncSkillDemand = async (req, res) => {
   }
 };
 
-/**
- * Get demand data for a specific skill
- */
 const getSkillDemand = async (req, res) => {
   try {
     const { skill } = req.params;
@@ -48,9 +42,6 @@ const getSkillDemand = async (req, res) => {
   }
 };
 
-/**
- * Get top in-demand skills
- */
 const getTopSkills = async (req, res) => {
   try {
     const limit = parseInt(req.query.limit) || 20;
@@ -70,9 +61,6 @@ const getTopSkills = async (req, res) => {
   }
 };
 
-/**
- * Aggregate demand for a single skill (on-demand)
- */
 const aggregateSkillDemand = async (req, res) => {
   try {
     const { skill } = req.params;

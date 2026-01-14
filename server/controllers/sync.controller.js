@@ -2,9 +2,6 @@ const syncService = require('../services/sync.service');
 const { successResponse, errorResponse } = require('../utils/responseFormatter');
 const logger = require('../utils/logger');
 
-/**
- * Trigger manual sync from all Level 1 sources
- */
 const triggerSync = async (req, res) => {
   try {
     const { source } = req.query;
@@ -33,9 +30,6 @@ const triggerSync = async (req, res) => {
   }
 };
 
-/**
- * Get sync status and history
- */
 const getSyncStatus = async (req, res) => {
   try {
     const status = await syncService.getSyncStatus();
