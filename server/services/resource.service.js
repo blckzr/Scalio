@@ -3,9 +3,6 @@ const { supabaseAdmin } = require('../config/database');
 const logger = require('../utils/logger');
 
 class ResourceService {
-  /**
-   * Get recommended learning resources based on user's skills
-   */
   async getRecommendations(userId) {
     try {
       // Get user's skills and proficiency levels

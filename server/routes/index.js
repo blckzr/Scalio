@@ -11,6 +11,7 @@ const coachRoutes = require('./coach.routes');
 const careerRoutes = require('./career.routes');
 const resourceRoutes = require('./resource.routes');
 const analyticsRoutes = require('./analytics.routes');
+const notificationRoutes = require('./notification.routes');
 
 const userRoutes = require("./user.routes")
 const adminRoutes = require("./admin.routes")
@@ -38,6 +39,7 @@ router.get('/', (req, res) => {
       career: '/api/career',
       resources: '/api/resources',
       analytics: '/api/analytics',
+      notifications: '/api/notifications',
     },
     
   });
@@ -54,6 +56,7 @@ router.use('/coach', coachRoutes);
 router.use('/career', careerRoutes);
 router.use('/resources', resourceRoutes);
 router.use('/analytics', analyticsRoutes);
+router.use('/notifications', notificationRoutes);
 
 router.use("/users", userRoutes)
 router.use("/admin", adminRoutes)
