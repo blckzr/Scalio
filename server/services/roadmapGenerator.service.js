@@ -1,18 +1,178 @@
 const db = require('../config/database');
 const logger = require('../utils/logger');
 const userRoadmapService = require('./userRoadmap.service');
+const aiService = require('./ai.service');
 
 class RoadmapGeneratorService {
-  async generateRoadmap({ user_id, learning_goal, current_skills = [], hours_per_week = 10, experience_level = 'beginner' }) {
+  async generateRoadmap({ user_id, learning_goal, current_skills = [], hours_per_week = 10, experience_level = 'beginner', use_ai = true }) {
     try {
       logger.info(`Generating roadmap for user ${user_id}`, {
         learning_goal,
         current_skills: current_skills.length,
         hours_per_week,
+        experience_level,
+        use_ai
+      });
+
+      if (use_ai) {
+        return await this.generateAIRoadmap({
+          user_id,
+          learning_goal,
+          current_skills,
+          hours_per_week,
+          experience_level
+        });
+      }
+
+      return await this.generateTemplateRoadmap({
+        user_id,
+        learning_goal,
+        current_skills,
+        hours_per_week,
         experience_level
       });
 
-      // Step 1: Find matching roadmap template
+    } catch (error) {
+      logger.error('Roadmap generation failed', { error: error.message });
+      throw error;
+    }
+  }
+
+  async generateAIRoadmap({ user_id, learning_goal, current_skills, hours_per_week, experience_level }) {
+    try {
+      logger.info(`Generating AI-powered roadmap for ${learning_goal}`);
+
+      const marketData = await this.getMarketData(learning_goal);
+
+      const userProfile = await this.getUserProfile(user_id);
+
+      const aiRoadmap = await aiService.complete(`You are an expert learning path advisor. Generate a comprehensive, personalized learning roadmap.
+
+USER PROFILE:
+- User ID: ${user_id}
+- Learning Goal: ${learning_goal}
+- Experience Level: ${experience_level}
+- Available Study Time: ${hours_per_week} hours/week
+- Current Skills: ${current_skills.length > 0 ? current_skills.join(', ') : 'None'}
+- Profile Details: ${JSON.stringify(userProfile || {})}
+
+${marketData ? `MARKET DATA (Philippines Job Market):
+- High Demand Skills: ${marketData.high_demand_skills?.join(', ') || 'N/A'}
+- Average Salary Range: ₱${marketData.avg_salary_min || 'N/A'} - ₱${marketData.avg_salary_max || 'N/A'}
+- Job Postings: ${marketData.job_count || 'N/A'} active positions
+- Trending Skills: ${marketData.trending_skills?.join(', ') || 'N/A'}` : ''}
+
+TASK:
+Generate a personalized learning roadmap with the following structure:
+
+1. Analyze user's current level vs goal requirements
+2. Create 4-6 learning phases: Foundation → Intermediate → Advanced → Specialization
+3. For each phase include:
+   - Phase name and clear description
+   - 3-8 specific skills to learn (prioritize high-demand skills)
+   - Realistic duration in weeks based on ${hours_per_week} hrs/week
+   - 2-4 key milestones with hour estimates
+   - 3-5 learning resources (courses, docs, projects)
+4. SKIP skills user already knows: ${current_skills.join(', ')}
+5. Include career outcomes and next steps
+
+IMPORTANT GUIDELINES:
+- Be realistic about time (don't overcrowd phases)
+- Prioritize job-ready, practical skills
+- Include hands-on projects in each phase
+- Consider Philippine job market demand
+- Total roadmap should be achievable in 3-12 months
+
+Return ONLY valid JSON (no markdown, no explanations):
+{
+  "roadmap_title": "Personalized [Technology] Learning Path",
+  "description": "Brief description of what user will learn",
+  "total_duration_weeks": 24,
+  "difficulty_level": "${experience_level}",
+  "phases": [
+    {
+      "phase_number": 1,
+      "phase_name": "Foundation Phase",
+      "description": "Build core fundamentals",
+      "duration_weeks": 6,
+      "skills": ["skill1", "skill2", "skill3"],
+      "milestones": [
+        {
+          "title": "Complete basics",
+          "description": "Learn fundamental concepts",
+          "estimated_hours": 20,
+          "resources": ["Resource name", "Another resource"]
+        }
+      ],
+      "learning_resources": [
+        {
+          "title": "Resource Title",
+          "type": "course",
+          "description": "What you'll learn",
+          "url": "https://example.com",
+          "priority": "high"
+        }
+      ]
+    }
+  ],
+  "career_outcomes": ["Junior Developer", "Entry-level position"],
+  "estimated_salary_range": "₱25,000 - ₱40,000",
+  "next_steps": "After completion, you can...",
+  "personalization_notes": "Customized based on your skills and market demand"
+}`, {
+        model: 'gemini-2.0-flash-exp',
+        temperature: 0.7,
+        parseJSON: true
+      });
+
+      logger.info(`AI generated roadmap with ${aiRoadmap.phases?.length} phases`);
+
+      // Step 4: Save to database
+      const template = await this.findBestMatchingTemplate(learning_goal);
+      const userRoadmap = await userRoadmapService.createUserRoadmap(
+        user_id,
+        template?.template_id || null,
+        template?.version || '1.0'
+      );
+
+      // Step 5: Return AI-generated roadmap
+      return {
+        user_roadmap_id: userRoadmap.user_roadmap_id,
+        template_id: template?.template_id || null,
+        ...aiRoadmap,
+        personalization: {
+          experience_level,
+          skills_already_known: current_skills.length,
+          market_data_included: !!marketData,
+          ai_enhanced: true,
+          generation_method: 'gemini-ai'
+        },
+        metadata: {
+          generated_at: new Date().toISOString(),
+          user_id,
+          hours_per_week
+        }
+      };
+
+    } catch (error) {
+      logger.error('AI roadmap generation failed, falling back to template', { error: error.message });
+      
+      // Fallback to template-based if AI fails
+      return await this.generateTemplateRoadmap({
+        user_id,
+        learning_goal,
+        current_skills,
+        hours_per_week,
+        experience_level
+      });
+    }
+  }
+
+  
+  async generateTemplateRoadmap({ user_id, learning_goal, current_skills, hours_per_week, experience_level }) {
+    try {
+      logger.info(`Generating template-based roadmap for ${learning_goal}`);
+
       const template = await this.findBestMatchingTemplate(learning_goal);
       
       if (!template) {
@@ -21,7 +181,6 @@ class RoadmapGeneratorService {
 
       logger.info(`Found template: ${template.title} (${template.template_id})`);
 
-      // Step 2: Extract skills from template
       const allSkills = this.extractSkillsFromTemplate(template.roadmap_data);
       
       if (allSkills.length === 0) {
@@ -30,28 +189,22 @@ class RoadmapGeneratorService {
 
       logger.info(`Extracted ${allSkills.length} skills from template`);
 
-      // Step 3: Filter out skills user already knows
       const skillsToLearn = this.filterKnownSkills(allSkills, current_skills);
       
       logger.info(`Filtered to ${skillsToLearn.length} new skills (removed ${allSkills.length - skillsToLearn.length} known skills)`);
 
-      // Step 4: Order skills by prerequisites and difficulty
       const orderedSkills = this.orderSkillsByPrerequisites(skillsToLearn, experience_level);
 
-      // Step 5: Create learning phases
       const phases = this.createLearningPhases(orderedSkills, experience_level);
 
-      // Step 6: Calculate time estimates
       const roadmapWithEstimates = this.calculateTimeEstimates(phases, hours_per_week);
 
-      // Step 7: Create user roadmap in database
       const userRoadmap = await userRoadmapService.createUserRoadmap(
         user_id,
         template.template_id,
         template.version
       );
 
-      // Step 8: Prepare response
       const result = {
         user_roadmap_id: userRoadmap.user_roadmap_id,
         template_id: template.template_id,
@@ -68,7 +221,7 @@ class RoadmapGeneratorService {
           experience_level,
           skills_already_known: current_skills.length,
           custom_filtering: true,
-          ai_enhanced: false // Phase 1: Rule-based only
+          ai_enhanced: false 
         }
       };
 
@@ -102,19 +255,16 @@ class RoadmapGeneratorService {
 
       const searchTerm = learning_goal.toLowerCase().trim();
       
-      // Try exact match first
       let match = templates.find(t => 
         t.title.toLowerCase().includes(searchTerm)
       );
 
-      // Try fuzzy match on description
       if (!match) {
         match = templates.find(t => 
           t.description?.toLowerCase().includes(searchTerm)
         );
       }
 
-      // Try partial word match
       if (!match) {
         const words = searchTerm.split(' ');
         match = templates.find(t => 
@@ -124,7 +274,6 @@ class RoadmapGeneratorService {
         );
       }
 
-      // Default to first template if no match
       return match || templates[0];
 
     } catch (error) {
@@ -140,7 +289,6 @@ class RoadmapGeneratorService {
       return skills;
     }
 
-    // Extract from nodes (topics and subtopics)
     templateData.nodes.forEach(node => {
       if (node.type === 'topic' || node.type === 'subtopic') {
         skills.push({
@@ -169,12 +317,10 @@ class RoadmapGeneratorService {
     return allSkills.filter(skill => {
       const skillName = skill.name.toLowerCase().trim();
       
-      // Check exact match
       if (knownSkillsLower.includes(skillName)) {
         return false;
       }
 
-      // Check partial match
       return !knownSkillsLower.some(known => 
         skillName.includes(known) || known.includes(skillName)
       );
@@ -182,18 +328,15 @@ class RoadmapGeneratorService {
   }
 
   orderSkillsByPrerequisites(skills, experience_level) {
-    // Create dependency graph
     const skillMap = new Map(skills.map(s => [s.id, s]));
     const ordered = [];
     const visited = new Set();
 
-    // Topological sort (prerequisites first)
     const visit = (skill) => {
       if (visited.has(skill.id)) return;
       
       visited.add(skill.id);
 
-      // Visit prerequisites first
       if (skill.prerequisites && skill.prerequisites.length > 0) {
         skill.prerequisites.forEach(prereqId => {
           const prereq = skillMap.get(prereqId);
@@ -206,14 +349,12 @@ class RoadmapGeneratorService {
       ordered.push(skill);
     };
 
-    // Start with skills that match experience level
     const prioritySkills = skills.filter(s => 
       this.matchesExperienceLevel(s, experience_level)
     );
 
     prioritySkills.forEach(visit);
 
-    // Add remaining skills
     skills.forEach(visit);
 
     return ordered;
@@ -231,7 +372,6 @@ class RoadmapGeneratorService {
     skills.forEach((skill, index) => {
       currentPhase.push(skill);
 
-      // Create phase when we hit the limit or reach end
       if (currentPhase.length === SKILLS_PER_PHASE || index === skills.length - 1) {
         phases.push({
           phase: phaseNumber,
@@ -282,7 +422,6 @@ class RoadmapGeneratorService {
   }
 
   inferDifficulty(node) {
-    // Check if node has explicit difficulty
     if (node.data?.difficulty) {
       return node.data.difficulty;
     }
@@ -299,7 +438,6 @@ class RoadmapGeneratorService {
       return node.data.estimated_hours;
     }
 
-    // Default estimates based on type
     const difficulty = this.inferDifficulty(node);
     
     const estimates = {
@@ -363,6 +501,74 @@ class RoadmapGeneratorService {
       throw error;
     }
   }
-}
+
+  async getMarketData(learning_goal) {
+    try {
+      const { supabaseAdmin } = require('../config/database');
+      
+      const { data, error } = await supabaseAdmin
+        .from('skill_demand')
+        .select(`
+          skill_id,
+          job_count,
+          avg_salary,
+          demand_score,
+          trending_direction,
+          Skills!inner(skill_name)
+        `)
+        .or(`Skills.skill_name.ilike.%${learning_goal}%`)
+        .order('demand_score', { ascending: false })
+        .limit(10);
+
+      if (error) {
+        logger.warn('Failed to fetch market data', { error: error.message });
+        return null;
+      }
+
+      if (!data || data.length === 0) {
+        return null;
+      }
+
+      const high_demand_skills = data.map(d => d.Skills.skill_name);
+      const salaries = data.map(d => d.avg_salary).filter(s => s > 0);
+      const job_counts = data.reduce((sum, d) => sum + (d.job_count || 0), 0);
+      
+      return {
+        high_demand_skills,
+        avg_salary_min: Math.min(...salaries),
+        avg_salary_max: Math.max(...salaries),
+        job_count: job_counts,
+        trending_skills: data.filter(d => d.trending_direction === 'up').map(d => d.Skills.skill_name)
+      };
+
+    } catch (error) {
+      logger.warn('Market data fetch error', { error: error.message });
+      return null;
+    }
+  }
+
+  async getUserProfile(user_id) {
+    try {
+      const { data: skills, error } = await db
+        .from('user_skills')
+        .select('skill_name, proficiency_level')
+        .eq('user_id', user_id);
+
+      if (error) {
+        logger.warn('Failed to fetch user profile', { error: error.message });
+        return null;
+      }
+
+      return {
+        assessed_skills: skills || [],
+        skill_count: skills?.length || 0,
+        proficiency_levels: skills?.map(s => s.proficiency_level) || []
+      };
+
+    } catch (error) {
+      logger.warn('User profile fetch error', { error: error.message });
+      return null;
+    }
+  }}
 
 module.exports = new RoadmapGeneratorService();

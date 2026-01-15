@@ -1,5 +1,6 @@
 const { GoogleGenerativeAI } = require('@google/generative-ai');
 const logger = require('../utils/logger');
+const aiCache = require('../utils/aiCache');
 
 class AIService {
   constructor() {
@@ -46,6 +47,17 @@ class AIService {
     const startTime = Date.now();
 
     try {
+      if (!options.noCache) {
+        const cached = aiCache.get(prompt, options);
+        if (cached) {
+          logger.info('Returning cached AI response', {
+            promptLength: prompt.length,
+            fromCache: true
+          });
+          return options.parseJSON ? JSON.parse(cached) : cached;
+        }
+      }
+
       logger.info('Sending request to Google Gemini', {
         model: options.model || this.config.model,
         promptLength: prompt.length,
@@ -77,6 +89,14 @@ class AIService {
         duration: `${duration}ms`,
         estimatedTokens: estimatedPromptTokens + estimatedCompletionTokens,
       });
+
+      if (!options.noCache) {
+        aiCache.set(prompt, responseText, {
+          model: options.model,
+          temperature: options.temperature,
+          ttl: options.cacheTTL
+        });
+      }
 
       return {
         success: true,
@@ -145,7 +165,6 @@ class AIService {
       const responseText = result.response.text();
       const duration = Date.now() - startTime;
 
-      // Estimate token usage
       const totalPromptLength = messages.reduce((sum, msg) => sum + msg.content.length, 0);
       const estimatedPromptTokens = Math.ceil(totalPromptLength / 4);
       const estimatedCompletionTokens = Math.ceil(responseText.length / 4);
