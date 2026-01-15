@@ -59,19 +59,19 @@ const CareerCard = ({ data }: CareerCardProps) => {
       </p>
 
       {/* Tags Section */}
-      <div className="flex flex-nowrap gap-1.5 mb-8 relative z-10 mt-auto">
+      <div className="flex flex-wrap gap-2 mb-8 relative z-10 mt-auto">
         {/* Skills Tag */}
-        <span className="whitespace-nowrap px-3 py-1.5 bg-[#181818] border border-[#333] text-[10px] font-black uppercase tracking-widest text-[#666] rounded-md flex items-center gap-1.5">
+        <span className="px-3 py-1.5 bg-background border border-[#333] text-[10px] font-black uppercase tracking-widest text-[#666] rounded-md flex items-center gap-1.5">
           {tags.skills} Skills
         </span>
 
         {/* Duration Tag */}
-        <span className="whitespace-nowrap px-3 py-1.5 bg-[#181818] border border-[#333] text-[10px] font-black uppercase tracking-widest text-[#666] rounded-md">
+        <span className="px-3 py-1.5 bg-background border border-[#333] text-[10px] font-black uppercase tracking-widest text-[#666] rounded-md">
           {tags.duration}
         </span>
 
         {/* Demand Tag */}
-        <span className="whitespace-nowrap px-3 py-1.5 bg-[#47a9ff]/10 text-[#47a9ff] text-[10px] font-black uppercase tracking-widest rounded-md flex items-center gap-1.5 border border-[#47a9ff]/20">
+        <span className="px-3 py-1.5 bg-primary/10 text-primary text-[10px] font-black uppercase tracking-widest rounded-md flex items-center gap-1.5 border border-primary/20">
           <TrendingUp className="w-3 h-3" /> {tags.demand}
         </span>
       </div>
