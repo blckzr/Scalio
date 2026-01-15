@@ -1,5 +1,5 @@
 const trendsService = require('../services/trends.service');
-const { successResponse, errorResponse } = require('../utils/response');
+const { successResponse, errorResponse } = require('../utils/responseFormatter');
 const logger = require('../utils/logger');
 
 class TrendsController {
