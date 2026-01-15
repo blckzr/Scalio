@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom"; // Added useNavigate
 import {
   User,
   Calendar,
@@ -10,16 +10,31 @@ import {
   Globe,
   EyeOff,
   Eye,
+  Loader2, // Added Loader for button
 } from "lucide-react";
 import { usePasswordValidation } from "../../hooks/usePasswordValidation";
 import RequirementItem from "../../components/ui/RequirementItem";
+import api from "../../lib/api"; // Import your Axios client
 
 const RegistrationPage = () => {
-  // We use this to toggle password visibility if needed (reusing logic from Login)
+  const navigate = useNavigate();
+
+  // --- 1. Form State (For fields not handled by the hook) ---
+  const [firstName, setFirstName] = useState("");
+  const [middleName, setMiddleName] = useState("");
+  const [lastName, setLastName] = useState("");
+  const [birthday, setBirthday] = useState("");
+  const [contactNumber, setContactNumber] = useState("");
+  const [email, setEmail] = useState("");
+  // Note: 'password' and 'confirmPassword' are handled by the hook below
+
+  // --- 2. UI State ---
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
-  // Use the Custom Hook
+  // --- 3. Custom Hook for Password Logic ---
   const {
     password,
     setPassword,
@@ -29,19 +44,61 @@ const RegistrationPage = () => {
     isFormValid,
   } = usePasswordValidation();
 
+  // --- 4. Registration Logic ---
+  const handleRegister = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError("");
+    setLoading(true);
+
+    // Double check form validity
+    if (!isFormValid) {
+      setError("Please ensure all fields are valid.");
+      setLoading(false);
+      return;
+    }
+
+    try {
+      // Construct the payload using snake_case as per your request
+      const payload = {
+        email: email,
+        password: password,
+        first_name: firstName,
+        last_name: lastName,
+        middle_name: middleName,
+        birthday: birthday,
+        contact_number: contactNumber,
+      };
+
+      // Call the API (Assuming endpoint is /auth/signup based on context)
+      // If your endpoint is different (e.g., /auth/register), change it here.
+      const response = await api.post("/auth/signup", payload);
+
+      if (response.data.status === "success") {
+        // Redirect to Login Page on success
+        navigate("/login");
+      }
+    } catch (err: any) {
+      console.error("Registration failed:", err);
+      setError(
+        err.response?.data?.message ||
+          "Failed to create account. Please try again."
+      );
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
-    // 1. Global Dark Background Container
     <div className="min-h-screen flex items-center justify-center relative overflow-hidden p-4 bg-background">
-      {/* Decorative Glows (Consistent with Login Page) */}
+      {/* Decorative Glows */}
       <div className="absolute top-0 left-0 w-full h-full overflow-hidden -z-10">
         <div className="absolute top-10 right-20 w-96 h-96 bg-primary/10 rounded-full blur-3xl"></div>
         <div className="absolute -bottom-20 -left-20 w-80 h-80 bg-accent/5 rounded-full blur-3xl"></div>
       </div>
 
-      {/* 2. Main Registration Card */}
-      {/* We use max-w-2xl because this form is wider than the login form */}
+      {/* Main Registration Card */}
       <div className="w-full max-w-2xl bg-[#1e1e1e] border border-white/10 rounded-2xl shadow-2xl overflow-hidden relative z-10">
-        {/* Header Section */}
+        {/* Header */}
         <div className="px-8 pt-8 pb-4 text-center">
           <h1 className="text-heading font-bold text-secondary tracking-tight mb-2">
             Create Account
@@ -53,7 +110,14 @@ const RegistrationPage = () => {
 
         {/* Form Section */}
         <div className="p-8 pt-4">
-          <form className="space-y-5">
+          <form className="space-y-5" onSubmit={handleRegister}>
+            {/* Error Message */}
+            {error && (
+              <div className="bg-red-500/10 border border-red-500/50 text-red-500 text-sm p-3 rounded-lg text-center animate-pulse">
+                {error}
+              </div>
+            )}
+
             {/* --- Row 1: First Name & Middle Name --- */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
               {/* First Name */}
@@ -70,8 +134,11 @@ const RegistrationPage = () => {
                   </div>
                   <input
                     type="text"
+                    required
                     placeholder="John"
                     className="input-field"
+                    value={firstName}
+                    onChange={(e) => setFirstName(e.target.value)}
                   />
                 </div>
               </div>
@@ -85,8 +152,9 @@ const RegistrationPage = () => {
                   type="text"
                   placeholder="D."
                   className="input-field pl-4"
+                  value={middleName}
+                  onChange={(e) => setMiddleName(e.target.value)}
                 />
-                {/* No icon needed for middle name usually, keeping it clean */}
               </div>
             </div>
 
@@ -106,8 +174,11 @@ const RegistrationPage = () => {
                   </div>
                   <input
                     type="text"
+                    required
                     placeholder="Doe"
                     className="input-field"
+                    value={lastName}
+                    onChange={(e) => setLastName(e.target.value)}
                   />
                 </div>
               </div>
@@ -124,14 +195,20 @@ const RegistrationPage = () => {
                       className="text-accent group-focus-within:text-primary transition-colors"
                     />
                   </div>
-                  <input type="date" className="input-field text-accent" />
+                  <input
+                    type="date"
+                    required
+                    className="input-field text-accent"
+                    value={birthday}
+                    onChange={(e) => setBirthday(e.target.value)}
+                  />
                 </div>
               </div>
             </div>
 
-            {/* --- Row 3: Age (Small) & Contact Number (Wide) --- */}
+            {/* --- Row 3: Contact Number & Email --- */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-              {/* Contact Number - Takes remaining space */}
+              {/* Contact Number */}
               <div className="space-y-1">
                 <label className="text-xs font-medium text-accent uppercase tracking-wider">
                   Contact Number
@@ -145,12 +222,16 @@ const RegistrationPage = () => {
                   </div>
                   <input
                     type="tel"
-                    placeholder="+1 (555) 000-0000"
+                    required
+                    placeholder="09123456789"
                     className="input-field"
+                    value={contactNumber}
+                    onChange={(e) => setContactNumber(e.target.value)}
                   />
                 </div>
               </div>
 
+              {/* Email */}
               <div className="space-y-1">
                 <label className="text-xs font-medium text-accent uppercase tracking-wider">
                   Email
@@ -164,14 +245,17 @@ const RegistrationPage = () => {
                   </div>
                   <input
                     type="email"
+                    required
                     placeholder="john.doe@example.com"
                     className="input-field"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
                   />
                 </div>
               </div>
             </div>
 
-            {/* --- PASSWORD SECTION --- */}
+            {/* --- Row 4: Password --- */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
               {/* Password Field */}
               <div className="space-y-1">
@@ -187,10 +271,11 @@ const RegistrationPage = () => {
                   </div>
                   <input
                     type={showPassword ? "text" : "password"}
+                    required
                     placeholder="Create a strong password"
                     className="input-field"
-                    value={password} // Bind to hook
-                    onChange={(e) => setPassword(e.target.value)} // Bind to hook
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
                   />
                   <button
                     type="button"
@@ -212,7 +297,6 @@ const RegistrationPage = () => {
                     <Lock
                       size={18}
                       className={`transition-colors ${
-                        // Logic: If they typed something and it doesn't match => Red Icon
                         confirmPassword && !validations.isMatching
                           ? "text-red-500"
                           : "text-accent group-focus-within:text-primary"
@@ -221,15 +305,15 @@ const RegistrationPage = () => {
                   </div>
                   <input
                     type={showConfirmPassword ? "text" : "password"}
+                    required
                     placeholder="Confirm your password"
                     className={`input-field ${
-                      // Logic: If they typed something and it doesn't match => Red Border
                       confirmPassword && !validations.isMatching
                         ? "border-red-500 focus:border-red-500 focus:ring-red-500/20"
                         : ""
                     }`}
-                    value={confirmPassword} // Bind to hook
-                    onChange={(e) => setConfirmPassword(e.target.value)} // Bind to hook
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
                   />
                   <button
                     type="button"
@@ -246,7 +330,7 @@ const RegistrationPage = () => {
               </div>
             </div>
 
-            {/* --- PASSWORD REQUIREMENTS CHECKLIST --- */}
+            {/* Password Requirements Checklist */}
             {password.length > 0 && (
               <div className="bg-background p-3 rounded-lg border border-white/5 grid grid-cols-2 gap-2 text-xs">
                 <RequirementItem
@@ -272,12 +356,24 @@ const RegistrationPage = () => {
             {/* Submit Button */}
             <button
               type="submit"
-              className="w-full bg-primary hover:bg-blue-400 text-white font-bold py-3.5 rounded-lg shadow-lg hover:shadow-primary/20 transition-all transform hover:-translate-y-0.5 mt-2"
+              disabled={loading || !isFormValid}
+              className={`w-full font-bold py-3.5 rounded-lg shadow-lg transition-all transform mt-2 flex justify-center items-center gap-2 ${
+                isFormValid
+                  ? "bg-primary hover:bg-blue-400 text-white hover:-translate-y-0.5"
+                  : "bg-gray-700 text-gray-400 cursor-not-allowed"
+              }`}
             >
-              Create Account
+              {loading ? (
+                <>
+                  <Loader2 size={20} className="animate-spin" />
+                  Creating Account...
+                </>
+              ) : (
+                "Create Account"
+              )}
             </button>
 
-            {/* --- Social Login Divider --- */}
+            {/* Social Divider & Footer ... (Same as before) */}
             <div className="relative flex py-2 items-center">
               <div className="grow border-t border-white/10"></div>
               <span className="shrink-0 mx-4 text-xs text-accent uppercase">
@@ -286,7 +382,6 @@ const RegistrationPage = () => {
               <div className="grow border-t border-white/10"></div>
             </div>
 
-            {/* Social Buttons (LinkedIn & Google) */}
             <div className="grid grid-cols-2 gap-4">
               <button
                 type="button"
@@ -299,13 +394,11 @@ const RegistrationPage = () => {
                 type="button"
                 className="flex items-center justify-center gap-2 bg-[#222] border border-white/10 hover:bg-[#2a2a2a] text-secondary py-2.5 rounded-lg transition-colors"
               >
-                {/* Using Globe as placeholder for Google G icon */}
                 <Globe size={20} className="text-red-500" />
                 <span className="text-sm font-medium">Google</span>
               </button>
             </div>
 
-            {/* Footer */}
             <div className="text-center text-accent text-sm">
               Already have an account?{" "}
               <Link
