@@ -4,16 +4,11 @@ import {
   ArrowLeft,
   CheckCircle2,
   ChevronRight,
-  BookOpen,
-  ExternalLink,
   Trophy,
   Sparkles,
   Loader2,
   Lightbulb,
   ShieldCheck,
-  Target,
-  Terminal,
-  Cpu,
 } from "lucide-react";
 
 // --- MOCK SERVICE (Simulating the Gemini Service) ---
@@ -81,13 +76,13 @@ const LessonPage = () => {
   const isComplete = progress === 100;
 
   return (
-    <div className="flex h-screen overflow-hidden bg-[#181818] text-[#888]">
+    <div className="flex h-screen overflow-hidden bg-background text-[#888]">
       {/* --- SIDEBAR (Mission Log) --- */}
-      <aside className="w-80 border-r border-[#333] flex flex-col bg-[#181818] hidden md:flex">
+      <aside className="w-80 border-r border-[#333] flex-col bg-background hidden md:flex">
         <div className="p-8 border-b border-[#333]">
           <Link
             to="/dashboard"
-            className="flex items-center text-[10px] text-[#555] hover:text-[#47a9ff] transition-colors mb-8 uppercase tracking-widest font-black"
+            className="flex items-center text-[10px] text-[#555] hover:text-primary transition-colors mb-8 uppercase tracking-widest font-black"
           >
             <ArrowLeft className="w-4 h-4 mr-2" /> Back to Journey
           </Link>
@@ -96,19 +91,19 @@ const LessonPage = () => {
             <span className="text-[10px] font-black text-[#444] uppercase tracking-widest">
               Mission Progress
             </span>
-            <span className="text-[10px] font-black text-[#47a9ff]">
+            <span className="text-[10px] font-black text-primary">
               {progress}%
             </span>
           </div>
           <div className="w-full h-1 bg-[#222] rounded-full overflow-hidden">
             <div
-              className="h-full bg-[#47a9ff] transition-all duration-700 shadow-[0_0_10px_rgba(71,169,255,0.4)]"
+              className="h-full bg-primary transition-all duration-700 shadow-[0_0_10px_rgba(71,169,255,0.4)]"
               style={{ width: `${progress}%` }}
             />
           </div>
         </div>
 
-        <nav className="flex-grow overflow-y-auto p-4 space-y-2 custom-scrollbar">
+        <nav className="grow overflow-y-auto p-4 space-y-2 custom-scrollbar">
           {lessons.map((lesson, index) => (
             <button
               key={lesson.id}
@@ -116,7 +111,7 @@ const LessonPage = () => {
               className={`w-full text-left p-4 rounded-2xl transition-all flex items-center gap-4 group
                 ${
                   activeIndex === index
-                    ? "bg-[#47a9ff]/5 border border-[#47a9ff]/30 text-[#47a9ff]"
+                    ? "bg-primary/5 border border-primary/30 text-primary"
                     : "hover:bg-[#222] border border-transparent text-[#555]"
                 }`}
             >
@@ -124,9 +119,9 @@ const LessonPage = () => {
                 className={`shrink-0 w-7 h-7 rounded-lg flex items-center justify-center text-[10px] font-black
                 ${
                   lesson.completed
-                    ? "bg-emerald-500 text-[#181818]"
+                    ? "bg-emerald-500 text-background"
                     : activeIndex === index
-                    ? "bg-[#47a9ff] text-[#181818]"
+                    ? "bg-primary text-background"
                     : "bg-[#222] text-[#444] group-hover:text-[#ccc]"
                 }`}
               >
@@ -151,7 +146,7 @@ const LessonPage = () => {
       {/* --- MAIN FOCUS AREA --- */}
       <main
         ref={contentRef}
-        className="flex-grow overflow-y-auto bg-[#181818] custom-scrollbar relative"
+        className="grow overflow-y-auto bg-background custom-scrollbar relative"
       >
         <div className="max-w-4xl mx-auto px-8 md:px-12 py-20">
           {/* Header Section */}
@@ -187,7 +182,7 @@ const LessonPage = () => {
                   ${
                     currentLesson.completed
                       ? "bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 shadow-[0_0_20px_rgba(16,185,129,0.1)]"
-                      : "bg-[#47a9ff] text-[#181818] hover:bg-[#3d93e0] shadow-[0_0_20px_rgba(71,169,255,0.3)]"
+                      : "bg-primary text-background hover:bg-[#3d93e0] shadow-[0_0_20px_rgba(71,169,255,0.3)]"
                   }`}
               >
                 <CheckCircle2 className="w-5 h-5" />
@@ -201,19 +196,19 @@ const LessonPage = () => {
           {/* AI Insight Section (Focus Mode Feature) */}
           {loadingAi ? (
             <div className="py-20 flex flex-col items-center justify-center gap-6 border-t border-[#222]">
-              <Loader2 className="w-10 h-10 animate-spin text-[#47a9ff]" />
+              <Loader2 className="w-10 h-10 animate-spin text-primary" />
               <p className="text-[10px] font-black text-[#555] uppercase tracking-[0.2em]">
                 Consulting AI Mentor
               </p>
             </div>
           ) : (
             <div className="animate-in fade-in slide-in-from-bottom-6 duration-700 mb-16">
-              <div className="p-8 md:p-10 bg-[#1c1c1c] rounded-[2.5rem] border border-[#333] relative overflow-hidden group hover:border-[#47a9ff]/20 transition-colors">
+              <div className="p-8 md:p-10 bg-[#1c1c1c] rounded-[2.5rem] border border-[#333] relative overflow-hidden group hover:border-primary/20 transition-colors">
                 {/* Background Glow */}
-                <div className="absolute top-0 right-0 w-64 h-64 bg-[#47a9ff]/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
+                <div className="absolute top-0 right-0 w-64 h-64 bg-primary/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
 
                 <div className="flex items-center gap-5 mb-8 relative z-10">
-                  <div className="w-10 h-10 bg-[#47a9ff] rounded-xl flex items-center justify-center text-[#181818] shadow-lg shadow-[#47a9ff]/20">
+                  <div className="w-10 h-10 bg-primary rounded-xl flex items-center justify-center text-background shadow-lg shadow-primary/20">
                     <Sparkles className="w-5 h-5" />
                   </div>
                   <div>
@@ -232,9 +227,9 @@ const LessonPage = () => {
                       return (
                         <div
                           key={i}
-                          className="my-6 bg-[#47a9ff]/5 p-6 rounded-2xl border border-[#47a9ff]/10 flex gap-4 items-start"
+                          className="my-6 bg-primary/5 p-6 rounded-2xl border border-primary/10 flex gap-4 items-start"
                         >
-                          <Lightbulb className="w-6 h-6 text-[#47a9ff] shrink-0 mt-1" />
+                          <Lightbulb className="w-6 h-6 text-primary shrink-0 mt-1" />
                           <div className="text-white font-bold leading-relaxed text-sm">
                             {block.replace(
                               "**Pro-Tip: Architectural Pattern**",
@@ -260,24 +255,24 @@ const LessonPage = () => {
             {activeIndex < lessons.length - 1 ? (
               <div
                 onClick={() => setActiveIndex(activeIndex + 1)}
-                className="cursor-pointer group flex flex-col sm:flex-row justify-between items-center gap-6 bg-[#1c1c1c] p-8 rounded-3xl border border-[#333] hover:border-[#47a9ff]/50 transition-all"
+                className="cursor-pointer group flex flex-col sm:flex-row justify-between items-center gap-6 bg-[#1c1c1c] p-8 rounded-3xl border border-[#333] hover:border-primary/50 transition-all"
               >
                 <div className="text-center sm:text-left">
-                  <p className="text-[10px] text-[#555] uppercase font-black tracking-widest mb-2 group-hover:text-[#47a9ff] transition-colors">
+                  <p className="text-[10px] text-[#555] uppercase font-black tracking-widest mb-2 group-hover:text-primary transition-colors">
                     Next Objective
                   </p>
                   <p className="text-xl font-bold text-white">
                     {lessons[activeIndex + 1].name}
                   </p>
                 </div>
-                <div className="w-12 h-12 bg-[#222] rounded-full flex items-center justify-center text-[#444] group-hover:bg-[#47a9ff] group-hover:text-[#181818] transition-all">
+                <div className="w-12 h-12 bg-[#222] rounded-full flex items-center justify-center text-[#444] group-hover:bg-primary group-hover:text-background transition-all">
                   <ChevronRight size={24} />
                 </div>
               </div>
             ) : (
               <div className="bg-[#1c1c1c] border border-[#333] p-12 rounded-[2.5rem] text-center relative overflow-hidden">
-                <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-[#47a9ff] to-emerald-500" />
-                <Trophy size={48} className="text-[#47a9ff] mx-auto mb-6" />
+                <div className="absolute top-0 left-0 w-full h-1 bg-linear-to-r from-primary to-emerald-500" />
+                <Trophy size={48} className="text-primary mx-auto mb-6" />
                 <h2 className="text-3xl font-black mb-4 text-white">
                   Mission Complete
                 </h2>
@@ -287,7 +282,7 @@ const LessonPage = () => {
                 </p>
 
                 {isComplete ? (
-                  <button className="inline-flex items-center gap-3 bg-[#47a9ff] text-[#181818] px-10 py-4 rounded-2xl font-bold uppercase tracking-widest text-xs hover:scale-105 transition-all shadow-xl shadow-[#47a9ff]/20">
+                  <button className="inline-flex items-center gap-3 bg-primary text-background px-10 py-4 rounded-2xl font-bold uppercase tracking-widest text-xs hover:scale-105 transition-all shadow-xl shadow-primary/20">
                     <ShieldCheck size={18} /> View Certificate
                   </button>
                 ) : (
