@@ -1,191 +1,303 @@
-import { useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { Link, useParams } from "react-router-dom";
-import { ArrowLeft, CheckCircle, ChevronRight, Hash, BookOpen, ExternalLink, Trophy } from "lucide-react";
+import {
+  ArrowLeft,
+  CheckCircle2,
+  ChevronRight,
+  BookOpen,
+  ExternalLink,
+  Trophy,
+  Sparkles,
+  Loader2,
+  Lightbulb,
+  ShieldCheck,
+  Target,
+  Terminal,
+  Cpu,
+} from "lucide-react";
+
+// --- MOCK SERVICE (Simulating the Gemini Service) ---
+const getTopicExplanation = async (topic: string) => {
+  return new Promise<string>((resolve) => {
+    setTimeout(() => {
+      resolve(
+        `**Pro-Tip: Architectural Pattern**\nWhen implementing ${topic}, prioritize immutability in your state management to prevent race conditions.\n\nThis module focuses on the synchronous execution flow. Ensure your error handling middleware is initialized before the main execution block.`
+      );
+    }, 1500);
+  });
+};
 
 const LessonPage = () => {
   const { courseId } = useParams();
+  const contentRef = useRef<HTMLDivElement>(null);
 
   // 1. Lesson Data
   const [lessons, setLessons] = useState(
     Array.from({ length: 8 }, (_, i) => ({
       id: i + 1,
-      name: `Module ${String(i + 1).padStart(2, '0')}: Technical Mastery`,
-      description: `Deep dive into the architecture and execution of stage ${i + 1}.`,
+      name: `Module ${String(i + 1).padStart(2, "0")}: Technical Mastery`,
+      description: `Deep dive into the architecture and execution of stage ${
+        i + 1
+      }.`,
       completed: false,
     }))
   );
 
   const [activeIndex, setActiveIndex] = useState(0);
+  const [aiInsight, setAiInsight] = useState<string | null>(null);
+  const [loadingAi, setLoadingAi] = useState(false);
+
   const currentLesson = lessons[activeIndex];
 
   // Logic to toggle completion
-  const toggleComplete = () => {
+  const toggleComplete = (e?: React.MouseEvent) => {
+    e?.stopPropagation();
     const updated = [...lessons];
     updated[activeIndex].completed = !updated[activeIndex].completed;
     setLessons(updated);
   };
 
-  const progress = Math.round((lessons.filter((l) => l.completed).length / lessons.length) * 100);
+  const progress = Math.round(
+    (lessons.filter((l) => l.completed).length / lessons.length) * 100
+  );
+
+  // Simulate AI Fetching when changing lessons
+  useEffect(() => {
+    const fetchAi = async () => {
+      setLoadingAi(true);
+      setAiInsight(null);
+      if (contentRef.current) {
+        contentRef.current.scrollTo({ top: 0, behavior: "smooth" });
+      }
+
+      const insight = await getTopicExplanation(currentLesson.name);
+      setAiInsight(insight);
+      setLoadingAi(false);
+    };
+
+    fetchAi();
+  }, [activeIndex, currentLesson.name]);
+
+  const isComplete = progress === 100;
 
   return (
-    // Updated Background: Deep Zinc/Black for a professional dark look
-    <div className="flex flex-col md:flex-row min-h-screen bg-[#09090b]">
-      
-      {/* --- SIDEBAR --- */}
-      <aside className="w-full md:w-80 border-r border-zinc-800 bg-[#0c0c0e] sticky top-0 h-screen p-6 flex flex-col gap-6">
-        <div>
+    <div className="flex h-screen overflow-hidden bg-[#181818] text-[#888]">
+      {/* --- SIDEBAR (Mission Log) --- */}
+      <aside className="w-80 border-r border-[#333] flex flex-col bg-[#181818] hidden md:flex">
+        <div className="p-8 border-b border-[#333]">
           <Link
-            to={`/dashboard`}
-            className="flex items-center gap-2 text-sm text-zinc-500 hover:text-white transition-colors mb-8 group"
+            to="/dashboard"
+            className="flex items-center text-[10px] text-[#555] hover:text-[#47a9ff] transition-colors mb-8 uppercase tracking-widest font-black"
           >
-            <ArrowLeft size={16} className="group-hover:-translate-x-1 transition-transform" /> 
-            Exit Course
+            <ArrowLeft className="w-4 h-4 mr-2" /> Back to Journey
           </Link>
 
-          <div className="space-y-3">
-            <div className="flex justify-between items-end">
-              <span className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-500">Progress</span>
-              <span className="text-sm font-bold text-blue-500">{progress}%</span>
-            </div>
-            <div className="w-full bg-zinc-800 h-1.5 rounded-full overflow-hidden">
-              <div
-                className="bg-blue-600 h-full transition-all duration-700 ease-in-out shadow-[0_0_10px_rgba(37,99,235,0.5)]"
-                style={{ width: `${progress}%` }}
-              />
-            </div>
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-[10px] font-black text-[#444] uppercase tracking-widest">
+              Mission Progress
+            </span>
+            <span className="text-[10px] font-black text-[#47a9ff]">
+              {progress}%
+            </span>
+          </div>
+          <div className="w-full h-1 bg-[#222] rounded-full overflow-hidden">
+            <div
+              className="h-full bg-[#47a9ff] transition-all duration-700 shadow-[0_0_10px_rgba(71,169,255,0.4)]"
+              style={{ width: `${progress}%` }}
+            />
           </div>
         </div>
 
-        <nav className="flex flex-col gap-1 overflow-y-auto pr-2 custom-scrollbar">
+        <nav className="flex-grow overflow-y-auto p-4 space-y-2 custom-scrollbar">
           {lessons.map((lesson, index) => (
             <button
               key={lesson.id}
               onClick={() => setActiveIndex(index)}
-              className={`flex items-center gap-3 p-3 rounded-xl text-sm transition-all text-left ${
-                activeIndex === index
-                  ? "bg-zinc-800 text-white ring-1 ring-zinc-700"
-                  : "text-zinc-500 hover:bg-zinc-800/50 hover:text-zinc-300"
-              }`}
+              className={`w-full text-left p-4 rounded-2xl transition-all flex items-center gap-4 group
+                ${
+                  activeIndex === index
+                    ? "bg-[#47a9ff]/5 border border-[#47a9ff]/30 text-[#47a9ff]"
+                    : "hover:bg-[#222] border border-transparent text-[#555]"
+                }`}
             >
-              <div className={`p-1.5 rounded-lg ${activeIndex === index ? "bg-blue-600 text-white" : "bg-zinc-900 text-zinc-600"}`}>
-                <Hash size={14} />
+              <div
+                className={`shrink-0 w-7 h-7 rounded-lg flex items-center justify-center text-[10px] font-black
+                ${
+                  lesson.completed
+                    ? "bg-emerald-500 text-[#181818]"
+                    : activeIndex === index
+                    ? "bg-[#47a9ff] text-[#181818]"
+                    : "bg-[#222] text-[#444] group-hover:text-[#ccc]"
+                }`}
+              >
+                {lesson.completed ? (
+                  <CheckCircle2 className="w-4 h-4" />
+                ) : (
+                  lesson.id
+                )}
               </div>
-              <span className="font-semibold truncate">{lesson.name}</span>
-              {lesson.completed && <CheckCircle size={14} className="text-emerald-500 ml-auto flex-shrink-0" />}
+              <span
+                className={`text-xs font-bold truncate ${
+                  activeIndex === index ? "text-white" : ""
+                }`}
+              >
+                {lesson.name}
+              </span>
             </button>
           ))}
         </nav>
       </aside>
 
-      {/* --- MAIN CONTENT --- */}
-      <main className="flex-1 p-6 md:p-16 max-w-5xl mx-auto w-full text-zinc-300">
-        {/* Breadcrumb */}
-        <div className="flex items-center gap-3 mb-8">
-          <span className="text-[10px] font-bold text-blue-500 bg-blue-500/10 px-2 py-1 rounded uppercase tracking-widest">
-            Module {currentLesson.id}
-          </span>
-          <div className="h-1 w-1 bg-zinc-700 rounded-full" />
-          <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">
-            {courseId?.replace('-', ' ')}
-          </span>
-        </div>
-
-        <h1 className="text-4xl md:text-5xl font-black text-white mb-4 tracking-tight">
-          {currentLesson.name}
-        </h1>
-        <p className="text-zinc-400 text-lg mb-10 leading-relaxed">
-          {currentLesson.description}
-        </p>
-
-        <button
-          onClick={toggleComplete}
-          className={`flex items-center gap-2 px-8 py-3 rounded-xl text-sm font-bold transition-all mb-12 border ${
-            currentLesson.completed
-              ? "bg-emerald-500/10 border-emerald-500/20 text-emerald-500 shadow-[0_0_15px_rgba(16,185,129,0.1)]"
-              : "bg-blue-600 border-blue-500 text-white hover:bg-blue-500 shadow-lg shadow-blue-600/20"
-          }`}
-        >
-          <CheckCircle size={18} />
-          {currentLesson.completed ? "Module Completed" : "Mark as Finished"}
-        </button>
-
-        {/* Content Card */}
-        <article className="bg-[#0c0c0e] border border-zinc-800 rounded-3xl p-8 md:p-12 shadow-2xl space-y-8">
-          <section className="space-y-4">
-            <h3 className="text-xl font-bold text-white flex items-center gap-2">
-              <BookOpen size={20} className="text-blue-500" />
-              Learning Objectives
-            </h3>
-            <p className="text-zinc-400 leading-relaxed">
-              In this session, we break down the core mechanics of {currentLesson.name.toLowerCase()}. 
-              We will explore the implementation details required to meet industry standards and ensure 
-              your workflow remains scalable and efficient.
-            </p>
-          </section>
-
-          <div className="grid md:grid-cols-2 gap-4 pt-4">
-            <div className="p-6 bg-zinc-900/50 border border-zinc-800 rounded-2xl">
-              <h4 className="font-bold text-zinc-200 mb-4 text-sm uppercase tracking-wider">Required Setup</h4>
-              <ul className="space-y-3 text-sm text-zinc-500">
-                <li className="flex items-center gap-2">• Terminal Configuration</li>
-                <li className="flex items-center gap-2">• Dependency Management</li>
-                <li className="flex items-center gap-2">• Module Integration</li>
-              </ul>
-            </div>
-
-            <div className="p-6 bg-zinc-900/50 border border-zinc-800 rounded-2xl">
-              <h4 className="font-bold text-zinc-200 mb-4 text-sm uppercase tracking-wider">Resources</h4>
-              <div className="space-y-3">
-                {["Technical Overview", "Project Files", "Community Notes"].map((item, i) => (
-                  <button key={i} className="flex items-center justify-between w-full text-sm text-blue-500 hover:text-blue-400 transition-colors">
-                    {item} <ExternalLink size={14} />
-                  </button>
-                ))}
-              </div>
-            </div>
-          </div>
-        </article>
-
-        {/* --- NAVIGATION FOOTER --- */}
-        <div className="mt-16 pt-10 border-t border-zinc-800">
-          {activeIndex < lessons.length - 1 ? (
-            <div className="flex flex-col sm:flex-row justify-between items-center gap-6 bg-[#0c0c0e] p-8 rounded-3xl border border-zinc-800 shadow-xl">
-              <div className="text-center sm:text-left">
-                <p className="text-[10px] text-zinc-500 uppercase font-black tracking-widest mb-1">Next Step</p>
-                <p className="text-xl font-bold text-white">{lessons[activeIndex + 1].name}</p>
-              </div>
-              <button
-                onClick={() => setActiveIndex(activeIndex + 1)}
-                className="flex items-center gap-2 bg-white text-black px-8 py-4 rounded-2xl font-bold hover:bg-zinc-200 transition-all group"
+      {/* --- MAIN FOCUS AREA --- */}
+      <main
+        ref={contentRef}
+        className="flex-grow overflow-y-auto bg-[#181818] custom-scrollbar relative"
+      >
+        <div className="max-w-4xl mx-auto px-8 md:px-12 py-20">
+          {/* Header Section */}
+          <header className="mb-12">
+            <div className="flex items-center gap-4 mb-8">
+              <span
+                className={`px-2 py-1 rounded text-[10px] font-black uppercase tracking-widest border ${
+                  currentLesson.completed
+                    ? "bg-emerald-500/10 border-emerald-500/20 text-emerald-500"
+                    : "bg-[#222] border-[#333] text-[#444]"
+                }`}
               >
-                Next Module
-                <ChevronRight size={20} className="group-hover:translate-x-1 transition-transform" />
+                {currentLesson.completed
+                  ? "Status: Optimized"
+                  : "Status: In Progress"}
+              </span>
+              <span className="text-[10px] font-black text-[#444] uppercase tracking-widest">
+                {courseId?.replace("-", " ")}
+              </span>
+            </div>
+
+            <h1 className="text-4xl md:text-6xl font-black text-white mb-6 tracking-tight">
+              {currentLesson.name}
+            </h1>
+            <p className="text-[#888] text-lg md:text-xl max-w-2xl leading-relaxed">
+              {currentLesson.description}
+            </p>
+
+            <div className="mt-12 flex gap-4">
+              <button
+                onClick={toggleComplete}
+                className={`px-8 py-4 rounded-2xl flex items-center gap-3 transition-all font-bold text-sm uppercase tracking-wider
+                  ${
+                    currentLesson.completed
+                      ? "bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 shadow-[0_0_20px_rgba(16,185,129,0.1)]"
+                      : "bg-[#47a9ff] text-[#181818] hover:bg-[#3d93e0] shadow-[0_0_20px_rgba(71,169,255,0.3)]"
+                  }`}
+              >
+                <CheckCircle2 className="w-5 h-5" />
+                {currentLesson.completed
+                  ? "Protocol Verified"
+                  : "Mark Complete"}
               </button>
             </div>
-          ) : (
-            // Final Completion State
-            <div className="bg-zinc-900 border border-zinc-800 p-10 rounded-[2.5rem] text-center shadow-2xl relative overflow-hidden">
-              <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-blue-600 to-indigo-600" />
-              <Trophy size={48} className="text-blue-500 mx-auto mb-4" />
-              <h2 className="text-3xl font-black mb-4 text-white">Course Accomplished!</h2>
-              <p className="text-zinc-400 mb-8 max-w-md mx-auto">
-                You have successfully navigated through all technical requirements. Your credential has been generated.
+          </header>
+
+          {/* AI Insight Section (Focus Mode Feature) */}
+          {loadingAi ? (
+            <div className="py-20 flex flex-col items-center justify-center gap-6 border-t border-[#222]">
+              <Loader2 className="w-10 h-10 animate-spin text-[#47a9ff]" />
+              <p className="text-[10px] font-black text-[#555] uppercase tracking-[0.2em]">
+                Consulting AI Mentor
               </p>
-              
-              {progress === 100 ? (
-                <Link
-                  to={`/certificate/${courseId}`}
-                  className="inline-flex items-center gap-3 bg-blue-600 text-white px-12 py-4 rounded-2xl font-black hover:bg-blue-500 transition-all shadow-lg shadow-blue-600/40 active:scale-95"
-                >
-                  View Certificate
-                </Link>
-              ) : (
-                <p className="text-sm font-bold text-amber-500 bg-amber-500/10 px-6 py-3 rounded-xl border border-amber-500/20 inline-block">
-                  Please complete all modules to unlock your certificate.
-                </p>
-              )}
+            </div>
+          ) : (
+            <div className="animate-in fade-in slide-in-from-bottom-6 duration-700 mb-16">
+              <div className="p-8 md:p-10 bg-[#1c1c1c] rounded-[2.5rem] border border-[#333] relative overflow-hidden group hover:border-[#47a9ff]/20 transition-colors">
+                {/* Background Glow */}
+                <div className="absolute top-0 right-0 w-64 h-64 bg-[#47a9ff]/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
+
+                <div className="flex items-center gap-5 mb-8 relative z-10">
+                  <div className="w-10 h-10 bg-[#47a9ff] rounded-xl flex items-center justify-center text-[#181818] shadow-lg shadow-[#47a9ff]/20">
+                    <Sparkles className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h3 className="text-white font-bold text-lg">
+                      AI Mastery Intel
+                    </h3>
+                    <p className="text-[10px] font-black text-[#444] uppercase tracking-widest">
+                      Contextual Analysis
+                    </p>
+                  </div>
+                </div>
+
+                <div className="text-[#ccc] whitespace-pre-wrap leading-loose text-base relative z-10">
+                  {aiInsight?.split("\n\n").map((block, i) => {
+                    if (block.toLowerCase().includes("pro-tip")) {
+                      return (
+                        <div
+                          key={i}
+                          className="my-6 bg-[#47a9ff]/5 p-6 rounded-2xl border border-[#47a9ff]/10 flex gap-4 items-start"
+                        >
+                          <Lightbulb className="w-6 h-6 text-[#47a9ff] shrink-0 mt-1" />
+                          <div className="text-white font-bold leading-relaxed text-sm">
+                            {block.replace(
+                              "**Pro-Tip: Architectural Pattern**",
+                              ""
+                            )}
+                          </div>
+                        </div>
+                      );
+                    }
+                    return (
+                      <p key={i} className="mb-4">
+                        {block}
+                      </p>
+                    );
+                  })}
+                </div>
+              </div>
             </div>
           )}
+
+          {/* Navigation Footer */}
+          <div className="mt-16 pt-10 border-t border-[#222]">
+            {activeIndex < lessons.length - 1 ? (
+              <div
+                onClick={() => setActiveIndex(activeIndex + 1)}
+                className="cursor-pointer group flex flex-col sm:flex-row justify-between items-center gap-6 bg-[#1c1c1c] p-8 rounded-3xl border border-[#333] hover:border-[#47a9ff]/50 transition-all"
+              >
+                <div className="text-center sm:text-left">
+                  <p className="text-[10px] text-[#555] uppercase font-black tracking-widest mb-2 group-hover:text-[#47a9ff] transition-colors">
+                    Next Objective
+                  </p>
+                  <p className="text-xl font-bold text-white">
+                    {lessons[activeIndex + 1].name}
+                  </p>
+                </div>
+                <div className="w-12 h-12 bg-[#222] rounded-full flex items-center justify-center text-[#444] group-hover:bg-[#47a9ff] group-hover:text-[#181818] transition-all">
+                  <ChevronRight size={24} />
+                </div>
+              </div>
+            ) : (
+              <div className="bg-[#1c1c1c] border border-[#333] p-12 rounded-[2.5rem] text-center relative overflow-hidden">
+                <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-[#47a9ff] to-emerald-500" />
+                <Trophy size={48} className="text-[#47a9ff] mx-auto mb-6" />
+                <h2 className="text-3xl font-black mb-4 text-white">
+                  Mission Complete
+                </h2>
+                <p className="text-[#666] mb-8 max-w-md mx-auto">
+                  All technical requirements met. Credential generation standing
+                  by.
+                </p>
+
+                {isComplete ? (
+                  <button className="inline-flex items-center gap-3 bg-[#47a9ff] text-[#181818] px-10 py-4 rounded-2xl font-bold uppercase tracking-widest text-xs hover:scale-105 transition-all shadow-xl shadow-[#47a9ff]/20">
+                    <ShieldCheck size={18} /> View Certificate
+                  </button>
+                ) : (
+                  <p className="text-xs font-bold text-[#555] bg-[#222] px-6 py-3 rounded-xl border border-[#333] inline-block uppercase tracking-widest">
+                    Complete all modules to unlock certificate
+                  </p>
+                )}
+              </div>
+            )}
+          </div>
         </div>
       </main>
     </div>
