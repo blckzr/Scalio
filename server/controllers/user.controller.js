@@ -1,5 +1,7 @@
 const userService = require("../services/user.service")
 const asyncHandler = require("../utils/asyncHandler")
+const assessmentService = require('../services/assessment.service');
+const RoadmapTemplate = require('../models/RoadmapTemplate.model');
 
 const UserController = {
   getProfile: asyncHandler(async (req, res) => {
@@ -33,6 +35,14 @@ const UserController = {
       message: "Profile updated successfully", 
       user: updatedUser 
     })
+  }),
+
+  getRecommendedRoadmaps: asyncHandler(async (req, res) => {
+    const userId = req.user?.user_id;
+    const userSkills = await assessmentService.getUserSkills(userId);
+    const tags = userSkills.map(skill => skill.skill_name);
+    const recommendedRoadmaps = await RoadmapTemplate.findBestMatch(tags);
+    res.status(200).json({ recommendedRoadmaps });
   }),
 }
 

@@ -3,7 +3,6 @@ import { Link, NavLink } from "react-router-dom";
 import { User, LogOut, Settings } from "lucide-react";
 import logo from "./logo.png"; 
 import api from "../../lib/api"; // Import your Axios instance
-import logo from "./logo.png";
 
 const Navbar = () => {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
@@ -84,10 +83,12 @@ const Navbar = () => {
               <NavLink to="/dashboard" className={getLinkClass}>
                 Dashboard
               </NavLink>
-              <NavLink to="/learn" className={getLinkClass}>
-                Learn
+              <NavLink to="/recommended-roadmaps" className={getLinkClass}>
+                  Recommended
               </NavLink>
-            </>
+              <NavLink to="/learn" className={getLinkClass}>
+                  Learn
+              </NavLink>            </>
           )}
           <NavLink to="/about" className={getLinkClass}>
             About

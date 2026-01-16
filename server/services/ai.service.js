@@ -12,7 +12,7 @@ class AIService {
     this.genAI = new GoogleGenerativeAI(apiKey);
 
     this.config = {
-      model: process.env.GOOGLE_AI_MODEL || 'gemini-2.0-flash-exp',
+      model: process.env.GOOGLE_AI_MODEL || 'gemini-pro',
       temperature: parseFloat(process.env.AI_TEMPERATURE) || 0.7,
       maxTokens: parseInt(process.env.AI_MAX_TOKENS) || 2000,
       retryAttempts: parseInt(process.env.AI_RETRY_ATTEMPTS) || 3,
@@ -258,7 +258,7 @@ Do not include any explanation or markdown formatting. Return only the JSON obje
         if (attempt < this.config.retryAttempts) {
           const delay = this.config.retryDelay * attempt;
           logger.warn(`Gemini request failed, retrying (${attempt}/${this.config.retryAttempts})`, {
-            error: error.message,
+            error: error,
             retryIn: `${delay}ms`,
           });
           await new Promise(resolve => setTimeout(resolve, delay));
@@ -266,7 +266,7 @@ Do not include any explanation or markdown formatting. Return only the JSON obje
       }
     }
 
-    logger.error('Gemini request failed after all retries', { error: lastError.message });
+    logger.error('Gemini request failed after all retries', { error: lastError });
     throw lastError;
   }
 

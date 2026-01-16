@@ -151,6 +151,27 @@ class ResourceController {
       return errorResponse(res, error.message, 500);
     }
   }
+
+  static async getResourcesByCategory(req, res) {
+    try {
+      const { category } = req.params;
+
+      if (!category) {
+        return errorResponse(res, 'Category is required', 400);
+      }
+
+      const resources = await resourceService.getResourcesByCategory(category);
+
+      return successResponse(
+        res,
+        resources,
+        `Resources for category "${category}" retrieved successfully`
+      );
+    } catch (error) {
+      logger.error('Error in getResourcesByCategory:', error);
+      return errorResponse(res, error.message, 500);
+    }
+  }
 }
 
 module.exports = ResourceController;

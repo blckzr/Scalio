@@ -1,12 +1,9 @@
 const express = require('express');
 const router = express.Router();
-const contactRoutes = require('../routes/contact.routes');
+const contactRoutes = require('./contact.routes');
 const importRoutes = require('./import.routes');
 const syncRoutes = require('./sync.routes');
 const marketRoutes = require('./market.routes');
-const userRoadmapRoutes = require('./userRoadmap.routes');
-const roadmapGeneratorRoutes = require('./roadmapGenerator.routes');
-const roadmapVersionRoutes = require('./roadmapVersion.routes');
 const assessmentRoutes = require('./assessment.routes');
 const coachRoutes = require('./coach.routes');
 const careerRoutes = require('./career.routes');
@@ -21,46 +18,10 @@ const userRoutes = require("./user.routes")
 const adminRoutes = require("./admin.routes")
 const authRoutes = require("./auth.routes")
 
+const certificationRoutes = require('./certification.routes');
+const roadmapRoutes = require('./roadmap.routes');
 
-
-router.get('/', (req, res) => {
-  res.json({
-    message: 'Scalio Backend API',
-    version: '1.0.0',
-    status: 'operational',
-    documentation: 'https://github.com/blckzr/Scalio/wiki',
-    endpoints: {
-      health: '/health',
-      test: '/api/test',
-      contact: '/api/contact',
-      import: '/api/import',
-      sync: '/api/sync',
-      market: '/api/market',
-      roadmaps: '/api/roadmaps',
-      generateRoadmap: '/api/generate-roadmap',
-      roadmapVersioning: '/api/roadmap-version',
-      assessment: '/api/assessment',
-      coach: '/api/coach',
-      career: '/api/career',
-      resources: '/api/resources',
-      analytics: '/api/analytics',
-      notifications: '/api/notifications',
-      trends: '/api/trends',
-      orchestrator: '/api/orchestrator',
-      adminAnalytics: '/api/admin-analytics',
-    },
-    
-  });
-});
-
-router.use('/contact', contactRoutes);
-router.use('/import', importRoutes);
-router.use('/sync', syncRoutes);
-router.use('/market', marketRoutes);
-router.use('/roadmaps', userRoadmapRoutes);
 router.use('/assessment', assessmentRoutes);
-router.use('/generate-roadmap', roadmapGeneratorRoutes);
-router.use('/roadmap-version', roadmapVersionRoutes);
 router.use('/coach', coachRoutes);
 router.use('/career', careerRoutes);
 router.use('/resources', resourceRoutes);
@@ -73,4 +34,8 @@ router.use('/admin-analytics', adminAnalyticsRoutes);
 router.use("/users", userRoutes)
 router.use("/admin", adminRoutes)
 router.use("/auth", authRoutes)
+
+router.use('/certifications', certificationRoutes);
+router.use('/roadmaps', roadmapRoutes);
+
 module.exports = router;

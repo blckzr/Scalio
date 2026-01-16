@@ -1,6 +1,7 @@
 const db = require('../config/database');
 const { supabaseAdmin } = require('../config/database');
 const logger = require('../utils/logger');
+const RoadmapTemplate = require('../models/RoadmapTemplate.model');
 
 class AssessmentService {
   async submitSkillAssessment(userId, skillName, proficiencyLevel) {
@@ -100,66 +101,58 @@ class AssessmentService {
 
   async quickAssessment(userId, skills) {
     try {
-      const results = [];
-      const errors = [];
+        const results = [];
+        const errors = [];
 
-      for (const { skill, level } of skills) {
-        try {
-          const result = await this.submitSkillAssessment(userId, skill, level);
-          results.push(result);
-        } catch (error) {
-          errors.push({ skill, error: error.message });
-          logger.error(`Error assessing ${skill}:`, error);
+        for (const { skill, level } of skills) {
+            try {
+                const result = await this.submitSkillAssessment(userId, skill, level);
+                results.push(result);
+            } catch (error) {
+                errors.push({ skill, error: error.message });
+                logger.error(`Error assessing ${skill}:`, error);
+            }
         }
-      }
 
-      // Calculate overall level based on assessments
-      const levelScores = { beginner: 1, intermediate: 2, advanced: 3 };
-      const avgScore = results.reduce((sum, r) => sum + levelScores[r.proficiency_level], 0) / results.length;
-      
-      let overall_level;
-      if (avgScore < 1.5) overall_level = 'beginner';
-      else if (avgScore < 2.5) overall_level = 'intermediate';
-      else overall_level = 'advanced';
+        const levelScores = { beginner: 1, intermediate: 2, advanced: 3 };
+        const avgScore = results.reduce((sum, r) => sum + levelScores[r.proficiency_level], 0) / (results.length || 1);
 
-      // Determine recommended path based on skills
-      const recommended_path = this.determineRecommendedPath(results);
+        let overall_level;
+        if (avgScore < 1.5) overall_level = 'beginner';
+        else if (avgScore < 2.5) overall_level = 'intermediate';
+        else overall_level = 'advanced';
 
-      logger.info(`User ${userId} completed quick assessment: ${results.length} skills assessed`);
+        const recommended_path = await this.determineRecommendedPath(results);
 
-      return {
-        overall_level,
-        skills_assessed: results.length,
-        recommended_path,
-        assessments: results,
-        errors: errors.length > 0 ? errors : undefined
-      };
+        logger.info(`User ${userId} completed quick assessment: ${results.length} skills assessed`);
+
+        return {
+            overall_level,
+            skills_assessed: results.length,
+            recommended_path: recommended_path ? recommended_path.title : 'Web Developer',
+            recommended_template_id: recommended_path ? recommended_path.template_id : null,
+            assessments: results,
+            errors: errors.length > 0 ? errors : undefined
+        };
     } catch (error) {
-      logger.error(`Error in quick assessment for user ${userId}:`, error);
-      throw error;
+        logger.error(`Error in quick assessment for user ${userId}:`, error);
+        throw error;
     }
-  }
+}
 
 
-  determineRecommendedPath(assessments) {
-    const skillNames = assessments.map(a => a.skill_name.toLowerCase());
+async determineRecommendedPath(assessments) {
+    const tags = assessments.map(a => a.skill_name.toLowerCase());
+    
+    // Add proficiency levels to tags
+    assessments.forEach(a => {
+        tags.push(a.proficiency_level.toLowerCase());
+    });
 
-    // Simple logic to recommend paths
-    if (skillNames.some(s => ['react', 'vue', 'angular', 'javascript'].includes(s))) {
-      return 'Frontend Developer';
-    }
-    if (skillNames.some(s => ['node', 'express', 'python', 'java', 'php'].includes(s))) {
-      return 'Backend Developer';
-    }
-    if (skillNames.some(s => ['python', 'machine learning', 'data science', 'pandas'].includes(s))) {
-      return 'Data Scientist';
-    }
-    if (skillNames.some(s => ['react', 'node', 'javascript', 'mongodb', 'sql'].includes(s))) {
-      return 'Full Stack Developer';
-    }
-
-    return 'Web Developer'; // Default
-  }
+    const bestMatch = await RoadmapTemplate.findBestMatch(tags);
+    
+    return bestMatch;
+}
 
   async updateSkillAssessment(userId, skillId, proficiencyLevel) {
     try {

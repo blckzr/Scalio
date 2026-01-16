@@ -10,6 +10,8 @@ router.get('/by-skill/:skillName', AsyncHandler(ResourceController.getResourcesB
 
 router.get('/learning-path/:skillName', AsyncHandler(ResourceController.getLearningPath));
 
+router.get('/by-category/:category', AsyncHandler(ResourceController.getResourcesByCategory));
+
 router.get('/roadmap/:roadmapId/module/:moduleId', AsyncHandler(ResourceController.getResourcesForModule));
 
 router.get('/roadmap/:roadmapId', AsyncHandler(ResourceController.getResourcesForRoadmap));

@@ -25,13 +25,7 @@ app.use(morgan("dev"));
 
 
 // Routes
-const userRoutes = require('./routes/user.routes');
-const adminRoutes = require('./routes/admin.routes');
-const authRoutes = require('./routes/auth.routes');
-
-app.use('/api/users', userRoutes);
-app.use('/api/admin', adminRoutes);
-app.use('/api/auth', authRoutes);
+app.use("/api", routes);
 
 // Health check endpoint
 app.get("/health", (req, res) => {
@@ -49,9 +43,6 @@ app.get("/api/test", (req, res) => {
     environment: process.env.NODE_ENV || "development",
   });
 });
-
-// Mount all API routes
-app.use("/api", routes);
 
 // 404 handler
 app.use((req, res) => {

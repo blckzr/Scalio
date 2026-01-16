@@ -43,6 +43,12 @@ const importRoadmap = async (roadmapData) => {
       ? (parseFloat(existingRoadmap[0].version) + 0.1).toFixed(1)
       : '1.0';
 
+    const tags = [...new Set([
+      ...(roadmap_data.tags || []),
+      category,
+      ...Object.values(roadmap_data.nodes || {}).map(node => node.data?.label).filter(Boolean)
+    ])];
+
     // Insert roadmap template
     const { data: roadmapTemplate, error: insertError } = await supabase
       .from('roadmap_templates')
@@ -57,7 +63,8 @@ const importRoadmap = async (roadmapData) => {
         created_by,
         is_active: true,
         industry_verified: false,
-        verification_score: 0
+        verification_score: 0,
+        tags
       })
       .select()
       .single();

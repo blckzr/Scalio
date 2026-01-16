@@ -59,8 +59,7 @@ USER PROFILE:
 ${marketData ? `MARKET DATA (Philippines Job Market):
 - High Demand Skills: ${marketData.high_demand_skills?.join(', ') || 'N/A'}
 - Average Salary Range: ₱${marketData.avg_salary_min || 'N/A'} - ₱${marketData.avg_salary_max || 'N/A'}
-- Job Postings: ${marketData.job_count || 'N/A'} active positions
-- Trending Skills: ${marketData.trending_skills?.join(', ') || 'N/A'}` : ''}
+- Job Postings: ${marketData.job_count || 'N/A'} active positions` : ''}
 
 TASK:
 Generate a personalized learning roadmap with the following structure:
@@ -536,10 +535,9 @@ Return ONLY valid JSON (no markdown, no explanations):
           job_count,
           avg_salary,
           demand_score,
-          trending_direction,
           Skills!inner(skill_name)
         `)
-        .or(`Skills.skill_name.ilike.%${learning_goal}%`)
+        .ilike('Skills.skill_name', `%${learning_goal}%`)
         .order('demand_score', { ascending: false })
         .limit(10);
 
@@ -560,8 +558,7 @@ Return ONLY valid JSON (no markdown, no explanations):
         high_demand_skills,
         avg_salary_min: Math.min(...salaries),
         avg_salary_max: Math.max(...salaries),
-        job_count: job_counts,
-        trending_skills: data.filter(d => d.trending_direction === 'up').map(d => d.Skills.skill_name)
+        job_count: job_counts
       };
 
     } catch (error) {
@@ -574,7 +571,7 @@ Return ONLY valid JSON (no markdown, no explanations):
     try {
       const { data: skills, error } = await db
         .from('user_skills')
-        .select('skill_name, proficiency_level')
+        .select('proficiency_level, Skills(skill_name)')
         .eq('user_id', user_id);
 
       if (error) {

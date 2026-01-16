@@ -3,12 +3,12 @@ const aiService = require('./ai.service');
 const coachService = require('./coach.service');
 const careerService = require('./career.service');
 const assessmentService = require('./assessment.service');
-const roadmapGeneratorService = require('./roadmapGenerator.service');
 const resourceService = require('./resource.service');
 const notificationService = require('./notification.service');
 const roadmapVersionService = require('./roadmapVersion.service');
 const trendsService = require('./trends.service');
 const logger = require('../utils/logger');
+const RoadmapTemplate = require('../models/RoadmapTemplate.model');
 
 class OrchestratorService {
   async routeIntent(userId, userMessage, context = {}) {
@@ -175,32 +175,10 @@ Classify the intent and respond in JSON:
   }
 
   async handleRoadmapIntent(userId, message, parameters, context) {
-    const learningGoal = parameters.learning_goal || context.learningGoal || 'Full Stack Developer';
-
-    if (message.toLowerCase().includes('create') || message.toLowerCase().includes('generate')) {
-      return await roadmapGeneratorService.generateRoadmap(
-        userId,
-        learningGoal,
-        parameters.current_skills || [],
-        parameters.experience_level || 'beginner',
-        parameters.hours_per_week || 15,
-        true // use AI
-      );
-    }
-
-    if (message.toLowerCase().includes('update') || message.toLowerCase().includes('version')) {
-      // Get user's roadmap and check for updates
-      const roadmapId = context.roadmapId;
-      if (!roadmapId) {
-        return { message: 'No active roadmap found. Would you like to create one?' };
-      }
-
-      const updates = await roadmapVersionService.checkForUpdates(userId, roadmapId);
-      return updates;
-    }
-
-    // Default: generate new roadmap
-    return await roadmapGeneratorService.generateRoadmap(userId, learningGoal);
+    const userSkills = await assessmentService.getUserSkills(userId);
+    const tags = userSkills.map(skill => skill.skill_name);
+    const bestMatch = await RoadmapTemplate.findBestMatch(tags);
+    return bestMatch;
   }
 
   

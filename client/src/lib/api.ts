@@ -39,4 +39,9 @@ api.interceptors.response.use(
   }
 );
 
+export const getRecommendedRoadmaps = async () => {
+    const response = await api.get('/users/recommended-roadmaps');
+    return response.data.recommendedRoadmaps;
+};
+
 export default api;

@@ -451,6 +451,57 @@ class ResourceService {
       throw error;
     }
   }
+
+  async getResourcesByCategory(category) {
+    try {
+      const RoadmapTemplate = require('../models/RoadmapTemplate.model');
+      
+      const templates = await RoadmapTemplate.getByCategory(category);
+      if (!templates || templates.length === 0) {
+        return {
+          category,
+          total_resources: 0,
+          resources: []
+        };
+      }
+
+      const allSkillIds = new Set();
+      for (const template of templates) {
+        // The roadmap_data is expected to be a JSON object with a `nodes` property
+        const skills = RoadmapTemplate.extractSkills(template.roadmap_data);
+        for (const skill of skills) {
+          allSkillIds.add(skill.id);
+        }
+      }
+
+      if (allSkillIds.size === 0) {
+        return {
+          category,
+          total_resources: 0,
+          resources: []
+        };
+      }
+
+      const { data: resources, error: resourceError } = await supabaseAdmin
+        .from('learning_resources')
+        .select('*')
+        .in('skill_id', Array.from(allSkillIds))
+        .order('rating', { ascending: false, nulls: 'last' });
+
+      if (resourceError) throw resourceError;
+
+      logger.info(`Found ${resources?.length || 0} resources for category ${category}`);
+
+      return {
+        category,
+        total_resources: resources?.length || 0,
+        resources: resources || []
+      };
+    } catch (error) {
+      logger.error(`Error getting resources for category ${category}:`, error);
+      throw error;
+    }
+  }
 }
 
 module.exports = new ResourceService();

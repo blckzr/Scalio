@@ -325,6 +325,40 @@ class UserRoadmapService {
         .update(updateData)
         .eq('user_roadmap_id', userRoadmapId);
 
+      // Issue certification if roadmap is completed
+      if (roadmapStatus === 'completed') {
+        try {
+          // Fetch user_id, template_id, roadmap_version
+          const { data: roadmap } = await db
+            .from('user_roadmaps')
+            .select('user_id, template_id, roadmap_version')
+            .eq('user_roadmap_id', userRoadmapId)
+            .single();
+
+          // Find certification_id for this roadmap (assume 1:1 with template_id)
+          // You may need to adjust this logic if certification_id is stored elsewhere
+          const { data: certification } = await db
+            .from('certifications')
+            .select('certification_id')
+            .eq('template_id', roadmap.template_id)
+            .maybeSingle();
+
+          if (certification && certification.certification_id) {
+            const CertificationService = require('./certification.service');
+            await CertificationService.issueCertification({
+              user_id: roadmap.user_id,
+              certification_id: certification.certification_id,
+              roadmap_id: userRoadmapId
+            });
+            logger.info(`Issued certification ${certification.certification_id} to user ${roadmap.user_id} for roadmap ${userRoadmapId}`);
+          } else {
+            logger.warn(`No certification found for template_id ${roadmap.template_id}`);
+          }
+        } catch (certErr) {
+          logger.error('Error issuing certification on roadmap completion:', certErr.message);
+        }
+      }
+
       logger.info(`Updated roadmap ${userRoadmapId} progress: ${progressPercentage}%`);
     } catch (error) {
       logger.error('Error recalculating progress:', error.message);

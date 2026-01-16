@@ -12,6 +12,7 @@ import TermsPage from "./pages/marketing/TermPage";
 import LearnPage from "./pages/LearnPage"; 
 import CoursePage from "./pages/CoursePage"; 
 import LessonPage from "./pages/LessonPage";
+import RecommendedRoadmapsPage from "./pages/RecommendedRoadmapsPage";
 
 const user = {
   isConnected: true,
@@ -40,6 +41,8 @@ function App() {
           
           {/* Individual Lesson content page */}
           <Route path="/learn/:courseId/lesson/:lessonId" element={<LessonPage />} />
+          
+          <Route path="/recommended-roadmaps" element={<RecommendedRoadmapsPage />} />
 
           {/* --- USER & INFO ROUTES --- */}
           <Route

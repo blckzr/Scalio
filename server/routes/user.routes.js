@@ -4,6 +4,6 @@ const { authMiddleware } = require("../middleware/authMiddleware")
 const UserController = require("../controllers/user.controller")
 
 router.get("/profile", authMiddleware, UserController.getProfile)
-router.put("/profile", authMiddleware, UserController.updateProfile)
+router.get("/recommended-roadmaps", authMiddleware, UserController.getRecommendedRoadmaps);
 
 module.exports = router
