@@ -80,34 +80,6 @@ const AboutPage = () => {
         </div>
       </section>
 
-      {/* --- THE TEAM (Placeholder) --- */}
-      <section className="space-y-12 border-t border-white/10 pt-16">
-        <div className="text-center space-y-4">
-          <h2 className="text-heading font-bold text-secondary">
-            Meet the Team
-          </h2>
-          <p className="text-accent">The minds behind the agents.</p>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-          {/* Duplicate this component for each team member */}
-          <TeamMember
-            name="[Your Name]"
-            role="Lead Developer"
-            bio="Passionate about AI and education architecture."
-          />
-          <TeamMember
-            name="Jane Doe"
-            role="Product Designer"
-            bio="Crafting intuitive experiences for complex systems."
-          />
-          <TeamMember
-            name="John Smith"
-            role="AI Engineer"
-            bio="Building the multi-agent infrastructure."
-          />
-        </div>
-      </section>
     </div>
   );
 };
@@ -132,29 +104,5 @@ const ScopeCard = ({
   </div>
 );
 
-const TeamMember = ({
-  name,
-  role,
-  bio,
-}: {
-  name: string;
-  role: string;
-  bio: string;
-}) => (
-  <div className="text-center space-y-3">
-    {/* Avatar Placeholder */}
-    <div className="w-24 h-24 bg-gray-800 rounded-full mx-auto border-2 border-primary/20 overflow-hidden">
-      {/* <img src="..." /> goes here */}
-      <div className="w-full h-full flex items-center justify-center text-gray-600 text-xs">
-        IMG
-      </div>
-    </div>
-    <div>
-      <h3 className="text-lg font-bold text-secondary">{name}</h3>
-      <div className="text-primary text-sm font-medium">{role}</div>
-    </div>
-    <p className="text-accent text-sm max-w-xs mx-auto">{bio}</p>
-  </div>
-);
 
 export default AboutPage;
