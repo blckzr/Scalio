@@ -5,84 +5,61 @@ import { Printer, ArrowLeft, Award, ShieldCheck, Loader2 } from 'lucide-react';
 const CertificatePage = () => {
   const { courseId } = useParams();
   const navigate = useNavigate();
-  
-  // 1. STATE MANAGEMENT FOR BACKEND DATA
   const [certData, setCertData] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(false);
 
-  // 2. FETCH DATA FROM YOUR API
   useEffect(() => {
-    const fetchCertificate = async () => {
-      try {
-        setLoading(true);
-        // Replace with your actual endpoint: e.g., `/api/certificates/${courseId}`
-        // const response = await fetch(`/api/certificates/${courseId}`);
-        // const result = await response.json();
-        
-        // Simulating API Delay & Response
-        await new Promise(resolve => setTimeout(resolve, 800));
-        const mockData = {
-          userName: "CLARENCE",
-          courseName: courseId?.replace(/-/g, ' ').toUpperCase() || "ROADMAP",
-          date: "January 16, 2026",
-          id: `SCALIO-${courseId?.toUpperCase().substring(0, 3)}-${Date.now().toString(36).toUpperCase()}`
-        };
-
-        setCertData(mockData);
-      } catch (err) {
-        console.error("Error fetching certificate:", err);
-        setError(true);
-      } finally {
-        setLoading(false);
-      }
+    const fetchCert = async () => {
+      // Simulate backend fetch
+      await new Promise(r => setTimeout(r, 800));
+      setCertData({
+        userName: "CLARENCE",
+        courseName: courseId?.replace(/-/g, ' ').toUpperCase() || "ROADMAP",
+        date: "January 16, 2026",
+        id: `SCALIO-${Math.random().toString(36).toUpperCase().substring(7)}`
+      });
+      setLoading(false);
     };
-
-    fetchCertificate();
+    fetchCert();
   }, [courseId]);
 
-  // Loading State UI
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-[#09090b] flex items-center justify-center text-white">
-        <Loader2 className="animate-spin mr-2" /> Generating Secure Credential...
-      </div>
-    );
-  }
-
-  // Error State UI
-  if (error || !certData) {
-    return (
-      <div className="min-h-screen bg-[#09090b] flex flex-col items-center justify-center text-white">
-        <p className="text-red-400 mb-4">Failed to load certificate. Please try again.</p>
-        <button onClick={() => navigate(-1)} className="text-zinc-400 hover:underline">Go Back</button>
-      </div>
-    );
-  }
+  if (loading) return (
+    <div className="min-h-screen bg-white flex items-center justify-center text-zinc-900 font-sans">
+      <Loader2 className="animate-spin mr-3" /> Verifying Credential...
+    </div>
+  );
 
   return (
-    <div className="min-h-screen bg-[#09090b] flex flex-col items-center p-6 md:p-12 text-white overflow-x-hidden">
+    /* Changed bg-[#09090b] to bg-zinc-50 for a clean look, or use bg-white */
+    <div className="min-h-screen bg-zinc-50 flex flex-col items-center p-6 md:p-12 text-zinc-900 overflow-x-hidden font-sans">
       
-      {/* HEADER - Hidden when printing */}
+      {/* 1. UI HEADER: Hidden in print */}
       <div className="w-full max-w-[1000px] flex justify-between items-center mb-10 print:hidden">
-        <button onClick={() => navigate(-1)} className="text-zinc-500 hover:text-white flex items-center gap-2 font-bold transition-all">
+        <button 
+          onClick={() => navigate(-1)} 
+          className="text-zinc-400 hover:text-zinc-900 flex items-center gap-2 font-bold transition-all"
+        >
           <ArrowLeft size={18} /> Back
         </button>
-        <button onClick={() => window.print()} className="bg-white text-black px-8 py-3 rounded-xl font-bold flex items-center gap-2 active:scale-95 transition-all">
+        <button 
+          onClick={() => window.print()} 
+          className="bg-blue-600 text-white px-8 py-3 rounded-xl font-bold flex items-center gap-2 active:scale-95 transition-all hover:bg-blue-700 shadow-lg"
+        >
           <Printer size={18} /> Download PDF
         </button>
       </div>
 
-      {/* THE CERTIFICATE WRAPPER */}
-      <div className="certificate-wrapper">
-        <div className="certificate-content bg-white aspect-video relative overflow-hidden shadow-2xl">
+      {/* 2. CERTIFICATE CONTAINER */}
+      <div className="certificate-wrapper shadow-2xl">
+        <div className="certificate-content bg-white aspect-video relative overflow-hidden">
           <div className="h-full w-full flex flex-col items-center justify-center p-12 md:p-20 border-[12px] border-white box-border text-zinc-900">
             
+            {/* Design Borders */}
             <div className="absolute inset-4 border border-zinc-100" />
             <div className="absolute inset-6 border-[6px] border-blue-600" />
             
             <div className="z-10 text-center mb-6">
-              <h1 className="text-2xl font-black uppercase text-zinc-800">Scalio Academy</h1>
+              <h1 className="text-2xl font-black uppercase text-zinc-800 tracking-tighter">Scalio Academy</h1>
               <p className="text-blue-600 font-bold uppercase tracking-[0.4em] text-[10px]">Credential of Achievement</p>
             </div>
 
@@ -101,7 +78,7 @@ const CertificatePage = () => {
 
             <div className="flex justify-between w-full px-4 md:px-12 mt-8 items-end z-10">
               <div className="text-center">
-                <p className="border-b-2 border-zinc-200 px-10 font-serif italic text-2xl text-zinc-800">Official Signature</p>
+                <p className="border-b-2 border-zinc-200 px-10 font-serif italic text-2xl text-zinc-800 leading-none pb-2">Official Signature</p>
                 <p className="text-[9px] font-black uppercase mt-2 text-zinc-400">Authorized Official</p>
               </div>
               <div className="text-right">
@@ -120,26 +97,50 @@ const CertificatePage = () => {
       </div>
 
       <style>{`
-        .certificate-wrapper { width: 100%; max-width: 1000px; }
+        .certificate-wrapper { width: 100%; max-width: 1000px; background: white; }
 
         @media print {
-          body * { visibility: hidden; }
-          .certificate-wrapper, .certificate-wrapper * { visibility: visible; }
+          /* 1. Hide everything on the page */
+          body * { 
+            visibility: hidden !important; 
+          }
+
+          /* 2. Reset backgrounds for PDF */
+          html, body {
+            background: white !important;
+            margin: 0 !important;
+            padding: 0 !important;
+          }
+
+          /* 3. Re-show ONLY the certificate */
+          .certificate-wrapper, .certificate-wrapper * { 
+            visibility: visible !important; 
+          }
+
           .certificate-wrapper {
             position: fixed !important;
-            left: 0 !important; top: 0 !important;
-            width: 100vw !important; height: 100vh !important;
-            display: flex !important; align-items: center !important; justify-content: center !important;
+            left: 0 !important; 
+            top: 0 !important;
+            width: 100vw !important; 
+            height: 100vh !important;
+            display: flex !important; 
+            align-items: center !important; 
+            justify-content: center !important;
             background-color: white !important;
-          }
-          .certificate-content {
-            width: 92% !important;
-            aspect-ratio: 16 / 9 !important;
             box-shadow: none !important;
+          }
+
+          .certificate-content {
+            width: 100% !important;
+            aspect-ratio: 16 / 9 !important;
             -webkit-print-color-adjust: exact !important;
             print-color-adjust: exact !important;
           }
-          @page { size: landscape; margin: 0; }
+
+          @page { 
+            size: landscape; 
+            margin: 0; 
+          }
         }
       `}</style>
     </div>
