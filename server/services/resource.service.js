@@ -251,6 +251,202 @@ class ResourceService {
     const levels = { 'beginner': 'intermediate', 'intermediate': 'advanced', 'advanced': 'advanced' };
     return levels[currentLevel] || 'beginner';
   }
+
+  async getResourcesForModule(roadmapId, moduleId, options = {}) {
+    try {
+      const { difficulty, type, limit = 10 } = options;
+
+      // Get module with its skills
+      const { data: module, error: moduleError } = await supabaseAdmin
+        .from('roadmap_modules')
+        .select(`
+          module_id,
+          module_title,
+          module_order,
+          roadmap_skills (
+            skill_id,
+            Skills (
+              skill_id,
+              skill_name
+            )
+          )
+        `)
+        .eq('roadmap_id', roadmapId)
+        .eq('module_id', moduleId)
+        .single();
+
+      if (moduleError || !module) {
+        throw new Error(`Module not found in roadmap`);
+      }
+
+      // Extract skill IDs from the module
+      const skillIds = module.roadmap_skills
+        .map(rs => rs.Skills?.skill_id)
+        .filter(Boolean);
+
+      if (skillIds.length === 0) {
+        return {
+          module_id: moduleId,
+          module_title: module.module_title,
+          resources: [],
+          message: 'No skills found in this module'
+        };
+      }
+
+      // Build query for resources
+      let query = supabaseAdmin
+        .from('learning_resources')
+        .select('*')
+        .in('skill_id', skillIds);
+
+      if (difficulty) {
+        query = query.eq('difficulty_level', difficulty);
+      }
+
+      if (type) {
+        query = query.eq('resource_type', type);
+      }
+
+      query = query.order('rating', { ascending: false }).limit(limit);
+
+      const { data: resources, error: resourceError } = await query;
+
+      if (resourceError) throw resourceError;
+
+      // Group resources by skill
+      const resourcesBySkill = module.roadmap_skills.map(rs => {
+        const skill = rs.Skills;
+        const skillResources = resources?.filter(r => r.skill_id === skill.skill_id) || [];
+        
+        return {
+          skill_id: skill.skill_id,
+          skill_name: skill.skill_name,
+          resources: skillResources
+        };
+      }).filter(s => s.resources.length > 0);
+
+      logger.info(`Found ${resources?.length || 0} resources for module ${moduleId}`);
+
+      return {
+        module_id: moduleId,
+        module_title: module.module_title,
+        module_order: module.module_order,
+        total_resources: resources?.length || 0,
+        skills: resourcesBySkill,
+        // Flat list for convenience
+        all_resources: resources || []
+      };
+    } catch (error) {
+      logger.error('Error getting resources for module:', error);
+      throw error;
+    }
+  }
+
+  async getResourcesForRoadmap(roadmapId, groupByModule = true) {
+    try {
+      // Get roadmap with all modules and skills
+      const { data: roadmap, error: roadmapError } = await supabaseAdmin
+        .from('roadmap_templates')
+        .select(`
+          roadmap_id,
+          roadmap_title,
+          description,
+          roadmap_modules (
+            module_id,
+            module_title,
+            module_order,
+            roadmap_skills (
+              skill_id,
+              Skills (
+                skill_id,
+                skill_name
+              )
+            )
+          )
+        `)
+        .eq('roadmap_id', roadmapId)
+        .single();
+
+      if (roadmapError || !roadmap) {
+        throw new Error(`Roadmap not found`);
+      }
+
+      // Collect all skill IDs from all modules
+      const allSkillIds = [];
+      roadmap.roadmap_modules.forEach(module => {
+        module.roadmap_skills.forEach(rs => {
+          if (rs.Skills?.skill_id) {
+            allSkillIds.push(rs.Skills.skill_id);
+          }
+        });
+      });
+
+      if (allSkillIds.length === 0) {
+        return {
+          roadmap_id: roadmapId,
+          roadmap_title: roadmap.roadmap_title,
+          resources: [],
+          message: 'No skills found in this roadmap'
+        };
+      }
+
+      // Fetch all resources for these skills
+      const { data: resources, error: resourceError } = await supabaseAdmin
+        .from('learning_resources')
+        .select('*')
+        .in('skill_id', allSkillIds)
+        .order('rating', { ascending: false });
+
+      if (resourceError) throw resourceError;
+
+      if (!groupByModule) {
+        // Return flat list
+        return {
+          roadmap_id: roadmapId,
+          roadmap_title: roadmap.roadmap_title,
+          total_resources: resources?.length || 0,
+          resources: resources || []
+        };
+      }
+
+      // Group by module
+      const moduleResources = roadmap.roadmap_modules
+        .sort((a, b) => a.module_order - b.module_order)
+        .map(module => {
+          const moduleSkillIds = module.roadmap_skills
+            .map(rs => rs.Skills?.skill_id)
+            .filter(Boolean);
+
+          const moduleResourceList = resources?.filter(r => 
+            moduleSkillIds.includes(r.skill_id)
+          ) || [];
+
+          return {
+            module_id: module.module_id,
+            module_title: module.module_title,
+            module_order: module.module_order,
+            resource_count: moduleResourceList.length,
+            resources: moduleResourceList
+          };
+        })
+        .filter(m => m.resource_count > 0);
+
+      logger.info(`Found ${resources?.length || 0} resources across ${moduleResources.length} modules for roadmap ${roadmapId}`);
+
+      return {
+        roadmap_id: roadmapId,
+        roadmap_title: roadmap.roadmap_title,
+        description: roadmap.description,
+        total_modules: roadmap.roadmap_modules.length,
+        modules_with_resources: moduleResources.length,
+        total_resources: resources?.length || 0,
+        modules: moduleResources
+      };
+    } catch (error) {
+      logger.error('Error getting resources for roadmap:', error);
+      throw error;
+    }
+  }
 }
 
 module.exports = new ResourceService();

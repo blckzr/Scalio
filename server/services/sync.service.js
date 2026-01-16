@@ -29,26 +29,6 @@ class SyncService {
   async syncRoadmapSh() {
     try {
       logger.info('Starting roadmap.sh sync...');
-      
-      // Check if GitHub token is configured
-      if (!process.env.GITHUB_TOKEN) {
-        throw new Error('GITHUB_TOKEN is required for sync. Generate a token at https://github.com/settings/tokens');
-      }
-      
-      const { owner, repo, path } = this.sources['roadmap.sh'];
-      
-      const { data: contents } = await this.octokit.repos.getContent({
-        owner,
-        repo,
-        path,
-      });
-
-      if (!Array.isArray(contents)) {
-        throw new Error('Expected directory listing');
-      }
-
-      const roadmapDirs = contents.filter(item => item.type === 'dir');
-      logger.info(`Found ${roadmapDirs.length} roadmaps in ${owner}/${repo}`);
 
       const results = {
         success: [],
@@ -56,26 +36,37 @@ class SyncService {
         skipped: [],
       };
 
-      for (const dir of roadmapDirs) {
-        const roadmapId = dir.name;
+      // Fetch list of official roadmaps from roadmap.sh API
+      const roadmapList = await this.fetchRoadmapList();
+      
+      if (!roadmapList || roadmapList.length === 0) {
+        logger.warn('No roadmaps found from roadmap.sh API');
+        return results;
+      }
+
+      logger.info(`Found ${roadmapList.length} roadmaps from roadmap.sh API`);
+
+      for (const roadmap of roadmapList) {
+        const roadmapId = roadmap.slug;
         logger.info(`Processing roadmap: ${roadmapId}`);
 
         try {
-          const roadmapData = await this.fetchRoadmapData(owner, repo, `${path}/${roadmapId}`);
+          // Fetch full roadmap data from API
+          const roadmapData = await this.fetchRoadmapFromAPI(roadmapId);
           
-          if (!roadmapData) {
-            results.skipped.push({ id: roadmapId, reason: 'No valid roadmap file found' });
+          if (!roadmapData || !roadmapData.nodes) {
+            results.skipped.push({ id: roadmapId, reason: 'No valid roadmap data returned' });
             continue;
           }
 
           // Import using existing import service
           const importResult = await importRoadmap({
-            title: roadmapData.title || this.formatRoadmapTitle(roadmapId),
-            description: roadmapData.description || `Official ${roadmapId} roadmap from roadmap.sh`,
+            title: roadmap.title?.card || roadmap.title?.page || this.formatRoadmapTitle(roadmapId),
+            description: roadmap.description || `Official ${roadmapId} roadmap from roadmap.sh`,
             category: this.mapToCategory(roadmapId),
             source_type: 'roadmap.sh',
-            source_url: `https://github.com/${owner}/${repo}/tree/main/${path}/${roadmapId}`,
-            roadmap_data: roadmapData.content,
+            source_url: `https://roadmap.sh/${roadmapId}`,
+            roadmap_data: roadmapData,
             created_by: null, // System sync
           });
 
@@ -85,9 +76,9 @@ class SyncService {
             roadmap_id: importResult.roadmap_id,
           });
 
-          logger.info(` Synced ${roadmapId} - v${importResult.version}`);
+          logger.info(`✓ Synced ${roadmapId} - v${importResult.version}`);
         } catch (error) {
-          logger.error(` Failed to sync ${roadmapId}:`, error.message);
+          logger.error(`✗ Failed to sync ${roadmapId}:`, error.message);
           results.failed.push({ id: roadmapId, error: error.message });
         }
       }
@@ -105,47 +96,41 @@ class SyncService {
     }
   }
 
-  async fetchRoadmapData(owner, repo, path) {
+  async fetchRoadmapList() {
     try {
-      // First, check what files exist in the directory
-      const { data: contents } = await this.octokit.repos.getContent({
-        owner,
-        repo,
-        path,
+      // Fetch both main and beginner roadmaps
+      const [mainRoadmaps, beginnerRoadmaps] = await Promise.all([
+        fetch('https://roadmap.sh/api/v1-list-official-roadmaps').then(r => r.json()),
+        fetch('https://roadmap.sh/api/v1-list-official-beginner-roadmaps').then(r => r.json()),
+      ]);
+
+      return [...mainRoadmaps, ...beginnerRoadmaps].filter(r => {
+        // Only include roadmaps with 'editor' renderer (skip legacy formats)
+        return r.renderer === 'editor' || !r.renderer;
       });
-
-      if (Array.isArray(contents)) {
-        const fileNames = contents.map(f => f.name);
-        logger.info(`Files in ${path}:`, fileNames);
-      }
-
-      // Try common filenames for roadmap data
-      const possibleFiles = ['roadmap.json', 'content.json', 'data.json', 'index.json'];
-
-      for (const filename of possibleFiles) {
-        try {
-          const { data } = await this.octokit.repos.getContent({
-            owner,
-            repo,
-            path: `${path}/${filename}`,
-          });
-
-          if (data.type === 'file' && data.content) {
-            const content = Buffer.from(data.content, 'base64').toString('utf-8');
-            const parsed = JSON.parse(content);
-            logger.info(`Found valid roadmap file: ${filename}`);
-            return parsed;
-          }
-        } catch (error) {
-          // File not found, try next
-          continue;
-        }
-      }
-
-      logger.warn(`No valid roadmap JSON found in ${path}`);
-      return null;
     } catch (error) {
-      logger.error(`Error fetching roadmap data from ${path}:`, error.message);
+      logger.error('Failed to fetch roadmap list:', error.message);
+      return [];
+    }
+  }
+
+  async fetchRoadmapFromAPI(roadmapId) {
+    try {
+      const response = await fetch(`https://roadmap.sh/api/v1-official-roadmap/${roadmapId}`);
+      
+      if (!response.ok) {
+        throw new Error(`API returned ${response.status}: ${response.statusText}`);
+      }
+
+      const data = await response.json();
+      
+      if (data.error) {
+        throw new Error(data.error);
+      }
+
+      return data;
+    } catch (error) {
+      logger.error(`Failed to fetch roadmap ${roadmapId} from API:`, error.message);
       return null;
     }
   }

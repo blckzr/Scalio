@@ -3,10 +3,6 @@ const { successResponse, errorResponse } = require('../utils/responseFormatter')
 const logger = require('../utils/logger');
 
 class ResourceController {
-  /**
-   * GET /api/resources/recommendations
-   * Get personalized learning resource recommendations based on user's skills
-   */
   static async getRecommendations(req, res) {
     try {
       const userId = req.user?.user_id;
@@ -101,6 +97,57 @@ class ResourceController {
       );
     } catch (error) {
       logger.error('Error in addResource:', error);
+      return errorResponse(res, error.message, 500);
+    }
+  }
+
+  static async getResourcesForModule(req, res) {
+    try {
+      const { roadmapId, moduleId } = req.params;
+      const { difficulty, type, limit } = req.query;
+
+      if (!roadmapId || !moduleId) {
+        return errorResponse(res, 'Roadmap ID and Module ID are required', 400);
+      }
+
+      const resources = await resourceService.getResourcesForModule(
+        roadmapId,
+        moduleId,
+        { difficulty, type, limit: limit ? parseInt(limit) : 10 }
+      );
+
+      return successResponse(
+        res,
+        resources,
+        'Module resources retrieved successfully'
+      );
+    } catch (error) {
+      logger.error('Error in getResourcesForModule:', error);
+      return errorResponse(res, error.message, 500);
+    }
+  }
+
+  static async getResourcesForRoadmap(req, res) {
+    try {
+      const { roadmapId } = req.params;
+      const { groupByModule } = req.query;
+
+      if (!roadmapId) {
+        return errorResponse(res, 'Roadmap ID is required', 400);
+      }
+
+      const resources = await resourceService.getResourcesForRoadmap(
+        roadmapId,
+        groupByModule === 'true'
+      );
+
+      return successResponse(
+        res,
+        resources,
+        'Roadmap resources retrieved successfully'
+      );
+    } catch (error) {
+      logger.error('Error in getResourcesForRoadmap:', error);
       return errorResponse(res, error.message, 500);
     }
   }

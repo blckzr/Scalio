@@ -1,4 +1,4 @@
-const supabase = require('../config/database');
+const { supabaseAdmin: supabase } = require('../config/database');
 const { validateRoadmapStructure } = require('../utils/roadmapValidator');
 const logger = require('../utils/logger');
 const marketService = require('./market.service');
