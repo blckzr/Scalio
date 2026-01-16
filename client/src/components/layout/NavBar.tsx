@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import { Link, NavLink } from "react-router-dom";
 import { User, LogOut, Settings } from "lucide-react";
-import logo from "./logo.png"; 
+import logo from "./logo.png";
 import api from "../../lib/api"; // Import your Axios instance
 
 const Navbar = () => {
@@ -80,15 +80,13 @@ const Navbar = () => {
           </NavLink>
           {isConnected && (
             <>
-              <NavLink to="/dashboard" className={getLinkClass}>
-                Dashboard
-              </NavLink>
               <NavLink to="/recommended-roadmaps" className={getLinkClass}>
-                  Recommended
+                Recommended
               </NavLink>
-              <NavLink to="/learn" className={getLinkClass}>
-                  Learn
-              </NavLink>            </>
+              {/* <NavLink to="/learn" className={getLinkClass}>
+                Learn
+              </NavLink>{" "} */}
+            </>
           )}
           <NavLink to="/about" className={getLinkClass}>
             About
