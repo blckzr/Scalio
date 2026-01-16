@@ -2,6 +2,107 @@ const db = require('../config/database');
 const logger = require('../utils/logger');
 
 class UserRoadmap {
+  
+  // =========================================================
+  // OPTIMIZED METHODS (UPDATED FOR LESSON LIST)
+  // =========================================================
+
+  // 1. GET MODULES (Lightweight - For Lesson List View)
+  static async getModules(roadmapId) {
+    try {
+      const { data, error } = await db
+        .from('user_roadmap_modules')
+        .select(`
+          module_id,
+          skill_id,
+          module_name,
+          sequence_order,
+          status,
+          time_spent_minutes,
+          started_at,
+          completed_at
+        `) // Optimized: Removed heavy nested joins for list speed
+        .eq('user_roadmap_id', roadmapId)
+        .order('sequence_order', { ascending: true });
+
+      if (error) throw error;
+      return data || [];
+    } catch (error) {
+      logger.error('Error getting roadmap modules:', error);
+      throw error;
+    }
+  }
+
+  // 2. UPDATE MODULE STATUS (With Timestamps)
+  static async updateModuleStatus(moduleId, status) {
+    try {
+      const updates = {
+        status,
+        updated_at: new Date()
+      };
+
+      if (status === 'in_progress') {
+        updates.started_at = new Date();
+      }
+
+      if (status === 'completed') {
+        updates.completed_at = new Date();
+      }
+
+      const { data, error } = await db
+        .from('user_roadmap_modules')
+        .update(updates)
+        .eq('module_id', moduleId)
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data;
+    } catch (error) {
+      logger.error('Error updating module status:', error);
+      throw error;
+    }
+  }
+
+  // 3. CALCULATE PROGRESS (Auto-Status Update)
+  static async calculateProgress(roadmapId) {
+    try {
+      const { data: modules, error } = await db
+        .from('user_roadmap_modules')
+        .select('status')
+        .eq('user_roadmap_id', roadmapId);
+
+      if (error) throw error;
+
+      if (!modules || modules.length === 0) {
+        return 0;
+      }
+
+      const completedModules = modules.filter(m => m.status === 'completed').length;
+      const progressPercentage = Math.round((completedModules / modules.length) * 100);
+
+      // Automatically determine Roadmap Status
+      const newStatus = progressPercentage === 100 ? 'completed' : 
+                        progressPercentage > 0 ? 'in_progress' : 'not_started';
+
+      // Update parent roadmap
+      await this.updateProgress(roadmapId, {
+        progress_percentage: progressPercentage,
+        status: newStatus
+      });
+
+      return progressPercentage;
+    } catch (error) {
+      logger.error('Error calculating roadmap progress:', error);
+      throw error;
+    }
+  }
+
+
+  // =========================================================
+  // EXISTING METHODS (PRESERVED UNTOUCHED)
+  // =========================================================
+
   static async findById(roadmapId, userId = null) {
     try {
       let query = db
@@ -184,36 +285,6 @@ class UserRoadmap {
     }
   }
 
-  static async getModules(roadmapId) {
-    try {
-      const { data, error } = await db
-        .from('user_roadmap_modules')
-        .select(`
-          module_id,
-          skill_id,
-          module_name,
-          sequence_order,
-          status,
-          started_at,
-          completed_at,
-          Skills (
-            skill_id,
-            skill_name,
-            skill_category
-          )
-        `)
-        .eq('user_roadmap_id', roadmapId)
-        .order('sequence_order', { ascending: true });
-
-      if (error) throw error;
-      return data || [];
-    } catch (error) {
-      logger.error('Error getting roadmap modules:', error);
-      throw error;
-    }
-  }
-
-
   static async createModules(modules) {
     try {
       const { data, error } = await db
@@ -225,66 +296,6 @@ class UserRoadmap {
       return data;
     } catch (error) {
       logger.error('Error creating roadmap modules:', error);
-      throw error;
-    }
-  }
-
-  static async updateModuleStatus(moduleId, status) {
-    try {
-      const updates = {
-        status,
-        updated_at: new Date()
-      };
-
-      if (status === 'in_progress') {
-        updates.started_at = new Date();
-      }
-
-      if (status === 'completed') {
-        updates.completed_at = new Date();
-      }
-
-      const { data, error } = await db
-        .from('user_roadmap_modules')
-        .update(updates)
-        .eq('module_id', moduleId)
-        .select()
-        .single();
-
-      if (error) throw error;
-      return data;
-    } catch (error) {
-      logger.error('Error updating module status:', error);
-      throw error;
-    }
-  }
-
- 
-  static async calculateProgress(roadmapId) {
-    try {
-      const { data: modules, error } = await db
-        .from('user_roadmap_modules')
-        .select('module_id, status')
-        .eq('user_roadmap_id', roadmapId);
-
-      if (error) throw error;
-
-      if (!modules || modules.length === 0) {
-        return 0;
-      }
-
-      const completedModules = modules.filter(m => m.status === 'completed').length;
-      const progressPercentage = Math.round((completedModules / modules.length) * 100);
-
-      await this.updateProgress(roadmapId, {
-        progress_percentage: progressPercentage,
-        status: progressPercentage === 100 ? 'completed' : 
-                progressPercentage > 0 ? 'in_progress' : 'not_started'
-      });
-
-      return progressPercentage;
-    } catch (error) {
-      logger.error('Error calculating roadmap progress:', error);
       throw error;
     }
   }

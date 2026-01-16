@@ -5,8 +5,12 @@ const { authMiddleware } = require('../middleware/authMiddleware');
 
 router.use(authMiddleware);
 
-router.get('/:lessonId', LessonsController.getLessonById);
+// 1. Get List of Lessons for a specific Roadmap
+// Usage: When user clicks "View Roadmap" on the dashboard
+router.get('/roadmap/:roadmapId', LessonsController.getRoadmapLessons);
 
-//router.patch('/:lessonId/complete', LessonsController.markLessonComplete);
+// 2. Get Single Lesson Detail
+// Usage: When user clicks a specific item in the lesson list
+router.get('/:lessonId', LessonsController.getLessonById);
 
 module.exports = router;

@@ -1,69 +1,73 @@
-const { supabase } = require("../config/database");
+const { supabaseAdmin } = require("../config/database");
+const UserRoadmap = require("../models/UserRoadmap.model"); // Ensure filename matches!
 
 class LessonsService {
-  // Get all user lessons for a specific Roadmap
+  
+  // A. FETCH LIST (Lightweight)
   async getLessonsByRoadmap(userRoadmapId) {
-    const { data, error } = await supabase
-      .from("user_roadmap_modules")
-      .select("*, Skills(skill_name, skill_category)")
-      .eq("user_roadmap_id", userRoadmapId)
-      .order("sequence_order", { ascending: true });
-
-    if (error) throw error;
-    return data;
+    return await UserRoadmap.getModules(userRoadmapId);
   }
 
+  // B. FETCH DETAIL (Heavy - Includes Resources)
   async getLessonById(lessonId) {
-    // Note: In your schema, 'module_id' is the Primary Key of user_roadmap_modules
-    const { data, error } = await supabase
-      .from("user_roadmap_modules")
-      .select("*, Skills(skill_name, skill_category)")
-      .eq("module_id", lessonId)
-      .single();
+    try {
+      // 1. Get Module Info + Skill Name
+      const { data: moduleData, error: moduleError } = await supabaseAdmin
+        .from("user_roadmap_modules")
+        .select(`
+          *,
+          Skills (skill_name, skill_category)
+        `)
+        .eq("module_id", lessonId)
+        .single();
 
-    if (error) throw error;
-    return data;
+      if (moduleError || !moduleData) {
+        throw new Error("Module not found");
+      }
+
+      // 2. Get Resources linked to this Skill
+      // This is the CRITICAL STEP that makes your content work
+      const { data: resources, error: resourceError } = await supabaseAdmin
+        .from("learning_resources")
+        .select("*")
+        .eq("skill_id", moduleData.skill_id);
+
+      return { 
+        ...moduleData, 
+        resources: resources || [] 
+      };
+
+    } catch (error) {
+      console.error("Error fetching lesson details:", error);
+      throw error;
+    }
   }
 
+  // C. NAVIGATE (Find next lesson)
   async getNextLesson(lessonId) {
-    // 1. Get current lesson position
-    const { data: current, error: currError } = await supabase
-      .from("user_roadmap_modules")
-      .select("user_roadmap_id, sequence_order")
-      .eq("module_id", lessonId)
-      .single();
+    try {
+      const { data: current } = await supabaseAdmin
+        .from("user_roadmap_modules")
+        .select("user_roadmap_id, sequence_order")
+        .eq("module_id", lessonId)
+        .single();
 
-    if (currError) throw currError;
+      if (!current) return null;
 
-    // 2. Find next lesson in the same roadmap
-    const { data, error } = await supabase
-      .from("user_roadmap_modules")
-      .select("*")
-      .eq("user_roadmap_id", current.user_roadmap_id)
-      .gt("sequence_order", current.sequence_order)
-      .order("sequence_order", { ascending: true })
-      .limit(1)
-      .single();
+      const { data } = await supabaseAdmin
+        .from("user_roadmap_modules")
+        .select("module_id")
+        .eq("user_roadmap_id", current.user_roadmap_id)
+        .gt("sequence_order", current.sequence_order)
+        .order("sequence_order", { ascending: true })
+        .limit(1)
+        .single();
 
-    if (error && error.code !== 'PGRST116') throw error; // Ignore "no rows" error
-    return data;
-  }
-
-  async markComplete(lessonId, { selfRating, notes }) {
-    const { data, error } = await supabase
-      .from("user_roadmap_modules")
-      .update({
-        status: "completed",
-        completed_at: new Date().toISOString(),
-        // notes: notes // Uncomment if you add a notes column to this table
-      })
-      .eq("module_id", lessonId)
-      .select()
-      .single();
-
-    if (error) throw error;
-    return data;
+      return data;
+    } catch (error) {
+      return null;
+    }
   }
 }
 
-module.exports = new LessonsService();
+module.exports = LessonsService;
