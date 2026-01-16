@@ -9,30 +9,39 @@ import AboutPage from "./pages/marketing/AboutPage";
 import ContactPage from "./pages/marketing/ContactPage";
 import PrivacyPage from "./pages/marketing/PrivacyPage";
 import TermsPage from "./pages/marketing/TermPage";
+import LearnPage from "./pages/LearnPage"; 
+import CoursePage from "./pages/CoursePage"; 
+import LessonPage from "./pages/LessonPage";
 
-// ---------------------------------------------
-// MOCK AUTH STATE (Replace this with real logic later)
-// ---------------------------------------------
 const user = {
   isConnected: true,
   role: "user",
 };
-// ---------------------------------------------
 
 function App() {
   return (
     <Routes>
-      {/* --- PUBLIC ROUTES (Login/Register) --- */}
+      {/* --- PUBLIC ROUTES --- */}
       <Route path="/login" element={<LoginPage />} />
       <Route path="/registration" element={<RegistrationPage />} />
       <Route path="/forgot-password" element={<ForgotPasswordPage />} />
 
-      {/* --- PROTECTED ROUTES (Must be logged in) --- */}
+      {/* --- PROTECTED ROUTES --- */}
       <Route element={<ProtectedRoute isAllowed={user.isConnected} />}>
-        {/* Wrap these pages in the MainLayout (Header/Footer) */}
         <Route element={<MainLayout />}>
-          {/* Common Pages */}
           <Route path="/" element={<HomePage />} />
+          
+          {/* --- LEARNING PATH SYSTEM --- */}
+          {/* Main selection page */}
+          <Route path="/learn" element={<LearnPage />} />
+          
+          {/* Specific Course Roadmap page */}
+          <Route path="/learn/:courseId" element={<CoursePage />} />
+          
+          {/* Individual Lesson content page */}
+          <Route path="/learn/:courseId/lesson/:lessonId" element={<LessonPage />} />
+
+          {/* --- USER & INFO ROUTES --- */}
           <Route
             path="/profile"
             element={<h1 className="text-heading">User Profile</h1>}
@@ -43,12 +52,11 @@ function App() {
           <Route path="/term" element={<TermsPage />} />
 
           {/* --- ADMIN ONLY ROUTES --- */}
-          {/* Double Check: Must be logged in AND have role 'admin' */}
           <Route
             element={
               <ProtectedRoute
                 isAllowed={!!user.isConnected && user.role === "admin"}
-                redirectPath="/" // Redirect normal users to Home, not Login
+                redirectPath="/"
               />
             }
           >
@@ -62,7 +70,6 @@ function App() {
         </Route>
       </Route>
 
-      {/* Catch all - Redirect to Home */}
       <Route path="*" element={<Navigate to="/" />} />
     </Routes>
   );
