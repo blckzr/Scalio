@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const adminAnalyticsController = require('../controllers/adminAnalytics.controller');
-const authMiddleware = require('../middleware/authMiddleware');
+const { authMiddleware } = require('../middleware/authMiddleware');
 const adminMiddleware = require('../middleware/adminMiddleware');
 
 router.get('/users', authMiddleware, adminMiddleware, adminAnalyticsController.getUserStatistics);
