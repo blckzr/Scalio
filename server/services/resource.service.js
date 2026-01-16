@@ -85,22 +85,25 @@ class ResourceService {
 
   async getResourcesBySkill(skillName, difficulty = null, resourceType = null) {
     try {
-      // Find skill by name
-      const { data: skill, error: skillError } = await supabaseAdmin
+      // Find skills by name (there might be duplicates)
+      const { data: skills, error: skillError } = await supabaseAdmin
         .from('Skills')
         .select('skill_id, skill_name')
         .ilike('skill_name', skillName)
-        .single();
+        .limit(10);
 
-      if (skillError || !skill) {
+      if (skillError || !skills || skills.length === 0) {
         throw new Error(`Skill "${skillName}" not found`);
       }
+
+      // Get all skill IDs (in case of duplicates)
+      const skillIds = skills.map(s => s.skill_id);
 
       // Build query
       let query = supabaseAdmin
         .from('learning_resources')
         .select('*')
-        .eq('skill_id', skill.skill_id);
+        .in('skill_id', skillIds);
 
       if (difficulty) {
         query = query.eq('difficulty_level', difficulty);
@@ -119,7 +122,8 @@ class ResourceService {
       logger.info(`Found ${resources?.length || 0} resources for ${skillName}`);
 
       return {
-        skill_name: skill.skill_name,
+        skill_name: skillName,
+        matching_skills: skills.length,
         filters: { difficulty, resource_type: resourceType },
         total_resources: resources?.length || 0,
         resources: resources || []
