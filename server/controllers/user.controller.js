@@ -40,6 +40,9 @@ const UserController = {
   getRecommendedRoadmaps: asyncHandler(async (req, res) => {
     const userId = req.user?.user_id;
     const userSkills = await assessmentService.getUserSkills(userId);
+    if (!userSkills || userSkills.length === 0) {
+      return res.status(200).json({ recommendedRoadmaps: [] });
+    }
     const tags = userSkills.map(skill => skill.skill_name);
     const bestMatch = await RoadmapTemplate.findBestMatch(tags);
     res.status(200).json({ recommendedRoadmaps: bestMatch ? [bestMatch] : [] });
