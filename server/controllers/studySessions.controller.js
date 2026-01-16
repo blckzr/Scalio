@@ -32,7 +32,7 @@ const StudySessionsController = {
   }),
 
   getLessonStudyHistory: asyncHandler(async (req, res) => {
-    const { supabase } = require("../config/supabase");
+    const { supabase } = require("../config/database");
     // Just for specific lesson history, simple enough to keep inline or move to service
     const { data } = await supabase
       .from("Study_Sessions")
