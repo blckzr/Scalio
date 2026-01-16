@@ -19,4 +19,9 @@ const supabaseAdmin = createClient(process.env.SUPABASE_URL, process.env.SUPABAS
   },
 })
 
-module.exports = { supabase, supabaseAdmin }
+// Export as default for database queries
+module.exports = supabase;
+
+// Named exports for when you need both
+module.exports.supabase = supabase;
+module.exports.supabaseAdmin = supabaseAdmin;

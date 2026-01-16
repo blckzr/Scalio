@@ -1,11 +1,11 @@
 import { useState, useRef, useEffect } from "react";
-import { Link, NavLink, useNavigate } from "react-router-dom";
+import { Link, NavLink } from "react-router-dom";
 import { User, LogOut, Settings } from "lucide-react";
+import logo from "./logo.png"; 
 import api from "../../lib/api"; // Import your Axios instance
 import logo from "./logo.png";
 
 const Navbar = () => {
-  const navigate = useNavigate();
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
@@ -80,9 +80,14 @@ const Navbar = () => {
             Home
           </NavLink>
           {isConnected && (
-            <NavLink to="/dashboard" className={getLinkClass}>
-              Dashboard
-            </NavLink>
+            <>
+              <NavLink to="/dashboard" className={getLinkClass}>
+                Dashboard
+              </NavLink>
+              <NavLink to="/learn" className={getLinkClass}>
+                Learn
+              </NavLink>
+            </>
           )}
           <NavLink to="/about" className={getLinkClass}>
             About
@@ -97,7 +102,7 @@ const Navbar = () => {
               {/* Profile Trigger Button */}
               <button
                 onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-                className={`w-10 h-10 rounded-full bg-[#222] border flex items-center justify-center overflow-hidden transition-all ${
+                className={`w-10 h-10 rounded-full bg-[#222] border flex items-center justify-center overflow-hidden transition-. all ${
                   isDropdownOpen
                     ? "border-primary ring-2 ring-primary/20"
                     : "border-white/10 hover:border-primary"

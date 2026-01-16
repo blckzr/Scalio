@@ -2,13 +2,11 @@ const userService = require("../services/user.service")
 const asyncHandler = require("../utils/asyncHandler")
 
 const UserController = {
-  // Get user profile
   getProfile: asyncHandler(async (req, res) => {
     const user = await userService.getUserById(req.user.id)
     res.status(200).json({ user })
   }),
 
-  // Update user profile
   updateProfile: asyncHandler(async (req, res) => {
     const { 
       first_name, 
