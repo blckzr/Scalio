@@ -26,7 +26,7 @@ class AIService {
       requestCount: 0,
     };
 
-    logger.info('AI Service initialized with Google Gemini', {
+    logger.info(`AI Service initialized with Google Gemini - Model: ${this.config.model}`, {
       model: this.config.model,
       temperature: this.config.temperature,
     });

@@ -1,4 +1,5 @@
 const db = require('../config/database');
+const { supabaseAdmin } = require('../config/database');
 const logger = require('../utils/logger');
 
 class UserRoadmapService {
@@ -39,6 +40,7 @@ class UserRoadmapService {
         .from('user_roadmaps')
         .insert({
           user_id: userId,
+          user_id_legacy: Math.floor(Math.random() * 1000000), // Generate random legacy ID
           template_id: templateId,
           roadmap_version: version,
           status: 'not_started',
@@ -54,17 +56,19 @@ class UserRoadmapService {
       }
 
       const modules = [];
+      const addedSkillIds = new Set(); // Track skills already added to prevent duplicates
+      
       for (let i = 0; i < skills.length; i++) {
         const skill = skills[i];
         
-        let { data: skillRecord, error: skillError } = await db
+        let { data: skillRecord, error: skillError } = await supabaseAdmin
           .from('Skills')
           .select('skill_id, skill_name')
           .ilike('skill_name', skill.name)
           .maybeSingle();
 
         if (!skillRecord) {
-          const { data: newSkill, error: createError } = await db
+          const { data: newSkill, error: createError } = await supabaseAdmin
             .from('Skills')
             .insert({ skill_name: skill.name })
             .select()
@@ -77,6 +81,13 @@ class UserRoadmapService {
           skillRecord = newSkill;
         }
 
+        // Skip if this skill is already added to the roadmap
+        if (addedSkillIds.has(skillRecord.skill_id)) {
+          logger.warn(`Skipping duplicate skill: ${skill.name}`);
+          continue;
+        }
+
+        addedSkillIds.add(skillRecord.skill_id);
         modules.push({
           user_roadmap_id: userRoadmap.user_roadmap_id,
           skill_id: skillRecord.skill_id,
@@ -86,7 +97,7 @@ class UserRoadmapService {
         });
       }
 
-      const { data: insertedModules, error: modulesError } = await db
+      const { data: insertedModules, error: modulesError } = await supabaseAdmin
         .from('user_roadmap_modules')
         .insert(modules)
         .select();

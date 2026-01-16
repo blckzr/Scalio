@@ -120,7 +120,6 @@ Return ONLY valid JSON (no markdown, no explanations):
   "next_steps": "After completion, you can...",
   "personalization_notes": "Customized based on your skills and market demand"
 }`, {
-        model: 'gemini-2.0-flash-exp',
         temperature: 0.7,
         parseJSON: true
       });
@@ -245,26 +244,37 @@ Return ONLY valid JSON (no markdown, no explanations):
         .from('roadmap_templates')
         .select('template_id, title, description, source_type, roadmap_data, version')
         .eq('is_active', true)
+        .not('roadmap_data', 'is', null)  // Only get templates with actual data
         .order('version', { ascending: false });
 
       if (error) throw error;
 
       if (!templates || templates.length === 0) {
-        throw new Error('No active roadmap templates found');
+        throw new Error('No active roadmap templates with data found');
       }
 
       const searchTerm = learning_goal.toLowerCase().trim();
       
+      // Exact match first
       let match = templates.find(t => 
-        t.title.toLowerCase().includes(searchTerm)
+        t.title.toLowerCase() === searchTerm
       );
 
+      // Then partial match in title
+      if (!match) {
+        match = templates.find(t => 
+          t.title.toLowerCase().includes(searchTerm)
+        );
+      }
+
+      // Then check description
       if (!match) {
         match = templates.find(t => 
           t.description?.toLowerCase().includes(searchTerm)
         );
       }
 
+      // Finally try word matching
       if (!match) {
         const words = searchTerm.split(' ');
         match = templates.find(t => 
@@ -274,6 +284,7 @@ Return ONLY valid JSON (no markdown, no explanations):
         );
       }
 
+      logger.info(`Template match: ${match?.title || 'Using first template'}`);
       return match || templates[0];
 
     } catch (error) {
@@ -286,14 +297,25 @@ Return ONLY valid JSON (no markdown, no explanations):
     const skills = [];
 
     if (!templateData || !templateData.nodes) {
+      logger.warn('Template data or nodes missing');
       return skills;
     }
 
+    logger.info(`Processing ${templateData.nodes.length} nodes from template`);
+
     templateData.nodes.forEach(node => {
-      if (node.type === 'topic' || node.type === 'subtopic') {
+      // Only include topic and subtopic nodes with valid labels
+      if ((node.type === 'topic' || node.type === 'subtopic') && node.data?.label && node.data.label.trim()) {
+        const skillName = node.data.label.trim();
+        
+        // Skip generic/empty labels
+        if (skillName.length < 2 || skillName === 'N/A') {
+          return;
+        }
+
         skills.push({
           id: node.id,
-          name: node.data?.label || node.id,
+          name: skillName,
           type: node.type,
           description: node.data?.description || '',
           difficulty: this.inferDifficulty(node),
@@ -304,6 +326,7 @@ Return ONLY valid JSON (no markdown, no explanations):
       }
     });
 
+    logger.info(`Extracted ${skills.length} valid skills from template`);
     return skills;
   }
 
