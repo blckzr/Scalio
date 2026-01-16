@@ -73,7 +73,7 @@ class AssessmentService {
           proficiency_level,
           assessed_at,
           updated_at,
-          Skills (
+          Skills:skill_id (
             skill_id,
             skill_name,
             skill_category
@@ -87,8 +87,8 @@ class AssessmentService {
       return userSkills.map(us => ({
         user_skill_id: us.id,
         skill_id: us.skill_id,
-        skill_name: us.Skills?.skill_name,
-        skill_category: us.Skills?.skill_category,
+        skill_name: us.Skills?.skill_name || null,
+        skill_category: us.Skills?.skill_category || null,
         proficiency_level: us.proficiency_level,
         assessed_at: us.assessed_at,
         updated_at: us.updated_at

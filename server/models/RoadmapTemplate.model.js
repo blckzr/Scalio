@@ -81,6 +81,7 @@ class RoadmapTemplate {
 
       let bestMatch = null;
       let maxScore = -1;
+      let minTagCount = Infinity;
 
       // Example tag weights (can be loaded from config/db)
       const tagWeights = {
@@ -148,9 +149,13 @@ class RoadmapTemplate {
           }
         }
 
-        if (score > maxScore) {
+        if (
+          score > maxScore ||
+          (score === maxScore && templateTags.length < minTagCount)
+        ) {
           maxScore = score;
           bestMatch = template;
+          minTagCount = templateTags.length;
         }
       }
 
