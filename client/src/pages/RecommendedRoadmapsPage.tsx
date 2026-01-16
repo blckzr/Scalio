@@ -201,7 +201,7 @@ const RecommendedRoadmapsPage = () => {
 
                 <div className="mt-auto">
                   <Link
-                    to={`/roadmap/${roadmap.template_id}`}
+                    to={`/learn/${roadmap.template_id}`}
                     className="inline-flex items-center gap-2 text-gray-400 text-sm font-medium group-hover:text-white transition-colors"
                   >
                     Begin Journey{" "}

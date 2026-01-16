@@ -13,9 +13,6 @@ import LearnPage from "./pages/LearnPage";
 import CoursePage from "./pages/CoursePage";
 import RecommendedRoadmapsPage from "./pages/RecommendedRoadmapsPage";
 import LessonPage from "./pages/learn/learn";
-// 1. IMPORT YOUR CERTIFICATE PAGE HERE
-import CertificatePage from "./pages/learn/certificate";
-
 const user = {
   isConnected: true,
   role: "user",
@@ -37,10 +34,7 @@ function App() {
           {/* --- LEARNING PATH SYSTEM --- */}
           <Route path="/learn" element={<LearnPage />} />
           <Route path="/learn/:courseId" element={<CoursePage />} />
-          <Route
-            path="/learn/:courseId/lesson/:lessonId"
-            element={<LessonPage />}
-          />
+          <Route path="/learn/lesson/:lessonId" element={<LessonPage />} />
 
           <Route
             path="/recommended-roadmaps"

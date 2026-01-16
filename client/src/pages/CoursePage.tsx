@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import {
   ArrowLeft,
   CheckCircle2,
@@ -10,96 +10,143 @@ import {
   Clock,
   ShieldCheck,
   Flag,
+  Loader2,
 } from "lucide-react";
-import { Link, useParams } from "react-router-dom";
+import { Link } from "react-router-dom";
+import api from "../lib/api"; // Ensure you have this configured
+
+// --- Types based on your API Response ---
+interface ApiModule {
+  module_id: string;
+  skill_id: string;
+  module_name: string;
+  sequence_order: number;
+  status: "completed" | "in_progress" | "not_started";
+  time_spent_minutes: number;
+  started_at: string | null;
+  completed_at: string | null;
+}
+
+interface UiTrack {
+  id: string;
+  title: string;
+  moduleNum: number;
+  level: string;
+  icon: React.ReactNode;
+  lessons: ApiModule[];
+}
 
 const CoursePage = () => {
-  const { courseId } = useParams();
+  const [modules, setModules] = useState<ApiModule[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  const courseTitle = courseId
-    ? courseId
-        .split("-")
-        .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-        .join(" ")
-    : "Course";
+  // HARDCODED ID as requested
+  const ROADMAP_ID = "ecaa377d-5daa-481a-8949-dfbde9695cc7";
 
-  // Mock Data
-  const modules = [
-    {
-      id: "foundations",
-      title: "Foundations",
-      moduleNum: 1,
-      level: "Beginner",
-      icon: <Target className="w-8 h-8 text-[#47a9ff]" />,
-      lessons: [
-        {
-          id: "1",
-          name: "Lesson Name",
-          desc: "Lesson Description",
-          time: "1 hour",
-          completed: true,
-        },
-        {
-          id: "2",
-          name: "Lesson Name",
-          desc: "Lesson Description",
-          time: "1 hour",
-          completed: false,
-        },
-      ],
-    },
-    {
-      id: "specialization",
-      title: "Specialization",
-      moduleNum: 2,
-      level: "Intermediate",
-      icon: <Zap className="w-8 h-8 text-[#47a9ff]" />,
-      lessons: [
-        {
-          id: "3",
-          name: "Lesson Name",
-          desc: "Lesson Description",
-          time: "1 hour",
-          completed: false,
-        },
-        {
-          id: "4",
-          name: "Lesson Name",
-          desc: "Lesson Description",
-          time: "1 hour",
-          completed: false,
-        },
-      ],
-    },
-    {
-      id: "mastery",
-      title: "Mastery",
-      moduleNum: 3,
-      level: "Advanced",
-      icon: <Award className="w-8 h-8 text-[#47a9ff]" />,
-      lessons: [
-        {
-          id: "5",
-          name: "Lesson Name",
-          desc: "Lesson Description",
-          time: "1 hour",
-          completed: false,
-        },
-      ],
-    },
-  ];
+  // --- 1. Fetch Data ---
+  useEffect(() => {
+    const fetchRoadmapModules = async () => {
+      try {
+        setLoading(true);
+        // Using the specific permanent ID
+        const response = await api.get(`/lessons/roadmap/${ROADMAP_ID}`);
 
-  // Calculate stats for the header
-  const totalLessons = modules.reduce(
-    (acc, mod) => acc + mod.lessons.length,
+        if (response.data.success) {
+          // Sort by sequence_order to ensure correct progression
+          const sortedData = response.data.data.sort(
+            (a: ApiModule, b: ApiModule) => a.sequence_order - b.sequence_order
+          );
+          setModules(sortedData);
+        }
+      } catch (err: any) {
+        console.error("Error fetching roadmap:", err);
+        setError("Failed to load course modules.");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchRoadmapModules();
+  }, []);
+
+  // --- 2. Process Data for UI ---
+  // Helper: Distribute flat list into 3 visual buckets
+  const distributeModules = (): UiTrack[] => {
+    if (modules.length === 0) return [];
+
+    const total = modules.length;
+    const third = Math.ceil(total / 3);
+
+    const foundations = modules.slice(0, third);
+    const specialization = modules.slice(third, third * 2);
+    const mastery = modules.slice(third * 2);
+
+    return [
+      {
+        id: "foundations",
+        title: "Foundations",
+        moduleNum: 1,
+        level: "Beginner",
+        icon: <Target className="w-8 h-8 text-[#47a9ff]" />,
+        lessons: foundations,
+      },
+      {
+        id: "specialization",
+        title: "Specialization",
+        moduleNum: 2,
+        level: "Intermediate",
+        icon: <Zap className="w-8 h-8 text-[#47a9ff]" />,
+        lessons: specialization,
+      },
+      {
+        id: "mastery",
+        title: "Mastery",
+        moduleNum: 3,
+        level: "Advanced",
+        icon: <Award className="w-8 h-8 text-[#47a9ff]" />,
+        lessons: mastery,
+      },
+    ].filter((track) => track.lessons.length > 0);
+  };
+
+  const tracks = distributeModules();
+
+  // --- 3. Stats Calculations ---
+  const totalLessons = modules.length;
+  const completedLessons = modules.filter(
+    (m) => m.status === "completed"
+  ).length;
+
+  const progressPercent =
+    totalLessons > 0 ? Math.round((completedLessons / totalLessons) * 100) : 0;
+
+  const isComplete = progressPercent === 100 && totalLessons > 0;
+
+  // Calculate Total Time Spent
+  const totalMinutes = modules.reduce(
+    (acc, m) => acc + (m.time_spent_minutes || 0),
     0
   );
-  const completedLessons = modules.reduce(
-    (acc, mod) => acc + mod.lessons.filter((l) => l.completed).length,
-    0
-  );
-  const progressPercent = Math.round((completedLessons / totalLessons) * 100);
-  const isComplete = progressPercent === 100;
+  const hours = Math.floor(totalMinutes / 60);
+  const minutes = totalMinutes % 60;
+  const timeDisplay = hours > 0 ? `${hours}h ${minutes}m` : `${minutes}m`;
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-[#181818] flex items-center justify-center">
+        <Loader2 className="w-10 h-10 text-[#47a9ff] animate-spin" />
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-[#181818] flex items-center justify-center text-red-500">
+        {error}
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-[#181818] pb-40">
@@ -108,21 +155,21 @@ const CoursePage = () => {
         <div className="max-w-7xl mx-auto px-8 flex flex-col md:flex-row items-center justify-between gap-10">
           <div className="flex items-center gap-8 w-full md:w-auto">
             <Link
-              to="/learn"
+              to="/dashboard"
               className="p-4 bg-[#242424] border border-[#333] rounded-2xl text-[#555] hover:text-[#47a9ff] transition-all"
             >
               <ArrowLeft className="w-6 h-6" />
             </Link>
             <div>
               <h1 className="text-3xl font-black text-white tracking-tight mb-2">
-                {courseTitle}
+                Frontend Developer Path
               </h1>
               <div className="flex items-center gap-6 text-[10px] font-black text-[#444] uppercase tracking-[0.2em]">
                 <span className="flex items-center gap-2">
                   <Clock className="w-3.5 h-3.5 text-[#47a9ff]" />{" "}
-                  {modules.length} Modules
+                  {tracks.length} Tracks
                 </span>
-                <span className="text-[#47a9ff]">{totalLessons} Lessons</span>
+                <span className="text-[#47a9ff]">{totalLessons} Modules</span>
               </div>
             </div>
           </div>
@@ -137,7 +184,7 @@ const CoursePage = () => {
               />
               <StatCard
                 label="Time Spent"
-                value="1h 20m"
+                value={timeDisplay}
                 icon={<Zap className="w-4 h-4 text-[#47a9ff]" />}
               />
             </div>
@@ -168,97 +215,118 @@ const CoursePage = () => {
         {/* Continuous Vertical Line */}
         <div className="absolute left-[53px] md:left-[79px] top-8 bottom-32 w-[2px] bg-[#333]" />
 
-        {modules.map((mod) => (
-          <section key={mod.id} className="mb-24 relative">
-            {/* Module Header */}
+        {tracks.map((track) => (
+          <section key={track.id} className="mb-24 relative">
+            {/* Track Header */}
             <div className="flex items-center gap-6 md:gap-8 mb-12 relative z-10">
               <div className="w-16 h-16 md:w-20 md:h-20 shrink-0 rounded-3xl bg-[#181818] border-2 border-[#333] text-[#47a9ff] flex items-center justify-center shadow-2xl transition-transform hover:scale-105">
-                {mod.icon}
+                {track.icon}
               </div>
               <div>
                 <h3 className="text-2xl md:text-3xl font-bold text-white mb-1">
-                  {mod.title}
+                  {track.title}
                 </h3>
                 <p className="text-[10px] font-black text-[#444] uppercase tracking-widest">
-                  Module {mod.moduleNum} •{" "}
-                  <span className="text-[#47a9ff]">{mod.level}</span>
+                  Block {track.moduleNum} •{" "}
+                  <span className="text-[#47a9ff]">{track.level}</span>
                 </p>
               </div>
             </div>
 
             {/* Lessons List */}
             <div className="ml-[32px] md:ml-[80px] pl-10 md:pl-16 space-y-6">
-              {mod.lessons.map((lesson, idx) => (
-                <Link
-                  to={`/learn/${courseId}/lesson/${lesson.id}`}
-                  key={lesson.id}
-                  className={`group bg-[#181818] p-6 md:p-8 rounded-[2rem] cursor-pointer border transition-all flex items-center gap-6 md:gap-10 relative
-                    ${
-                      lesson.completed
-                        ? "opacity-60 border-[#333] hover:opacity-100"
-                        : "border-[#333] hover:border-[#47a9ff]/50 hover:bg-[#222]"
-                    }`}
-                >
-                  {/* Status Indicator on Line */}
-                  <div
-                    className={`absolute -left-[51px] md:-left-[75px] top-1/2 -translate-y-1/2 w-4 h-4 rounded-full border-4 border-[#181818] 
-                    ${
-                      lesson.completed
-                        ? "bg-emerald-500"
-                        : "bg-[#333] group-hover:bg-[#47a9ff]"
-                    }`}
-                  />
+              {track.lessons.map((lesson) => {
+                const isCompleted = lesson.status === "completed";
+                const isInProgress = lesson.status === "in_progress";
 
-                  {/* Icon/Number Box */}
-                  <div
-                    className={`w-12 h-12 shrink-0 rounded-2xl flex items-center justify-center font-black text-sm transition-all
-                    ${
-                      lesson.completed
-                        ? "bg-emerald-500/10 text-emerald-500 border border-emerald-500/20"
-                        : "bg-[#181818] border border-[#333] text-[#444] group-hover:text-[#47a9ff]"
-                    }`}
-                  >
-                    {lesson.completed ? (
-                      <CheckCircle2 className="w-6 h-6" />
-                    ) : (
-                      lesson.id
-                    )}
-                  </div>
-
-                  {/* Content */}
-                  <div className="flex-grow min-w-0">
-                    <h4 className="text-lg font-bold text-[#ddd] mb-2 group-hover:text-white transition-colors truncate">
-                      {lesson.name}
-                    </h4>
-                    <p className="text-xs text-[#666] line-clamp-1 font-medium group-hover:text-[#888]">
-                      {lesson.desc}
-                    </p>
-                  </div>
-
-                  {/* Right Side Metadata/Action */}
-                  <div className="flex items-center gap-6">
-                    <div className="hidden sm:block text-right">
-                      <p className="text-[10px] font-black text-[#444] uppercase tracking-widest mb-1">
-                        Est. Time
-                      </p>
-                      <p className="text-xs font-bold text-[#666]">
-                        {lesson.time}
-                      </p>
-                    </div>
-
-                    <div
-                      className={`p-3 rounded-2xl border transition-all
+                return (
+                  <Link
+                    to={`/learn/lesson/${lesson.module_id}`}
+                    key={lesson.module_id}
+                    className={`group bg-[#181818] p-6 md:p-8 rounded-[2rem] cursor-pointer border transition-all flex items-center gap-6 md:gap-10 relative
                       ${
-                        lesson.completed
-                          ? "bg-[#181818] border-[#333] text-[#333]"
-                          : "bg-[#181818] border-[#333] text-[#444] group-hover:text-[#47a9ff] group-hover:border-[#47a9ff]/30"
+                        isCompleted
+                          ? "opacity-60 border-[#333] hover:opacity-100"
+                          : isInProgress
+                          ? "border-[#47a9ff]/50 bg-[#47a9ff]/5"
+                          : "border-[#333] hover:border-[#47a9ff]/50 hover:bg-[#222]"
+                      }`}
+                  >
+                    {/* Status Indicator on Line */}
+                    <div
+                      className={`absolute -left-[51px] md:-left-[75px] top-1/2 -translate-y-1/2 w-4 h-4 rounded-full border-4 border-[#181818] 
+                      ${
+                        isCompleted
+                          ? "bg-emerald-500"
+                          : isInProgress
+                          ? "bg-[#47a9ff]"
+                          : "bg-[#333] group-hover:bg-[#47a9ff]"
+                      }`}
+                    />
+
+                    {/* Icon/Number Box */}
+                    <div
+                      className={`w-12 h-12 shrink-0 rounded-2xl flex items-center justify-center font-black text-sm transition-all
+                      ${
+                        isCompleted
+                          ? "bg-emerald-500/10 text-emerald-500 border border-emerald-500/20"
+                          : isInProgress
+                          ? "bg-[#47a9ff] text-[#181818] border border-[#47a9ff]"
+                          : "bg-[#181818] border border-[#333] text-[#444] group-hover:text-[#47a9ff]"
                       }`}
                     >
-                      <Play className="w-5 h-5 fill-current" />
+                      {isCompleted ? (
+                        <CheckCircle2 className="w-6 h-6" />
+                      ) : (
+                        lesson.sequence_order
+                      )}
                     </div>
-                  </div>
-                </Link>
-              ))}
+
+                    {/* Content */}
+                    <div className="flex-grow min-w-0">
+                      <h4 className="text-lg font-bold text-[#ddd] mb-2 group-hover:text-white transition-colors truncate">
+                        {lesson.module_name}
+                      </h4>
+                      <p className="text-xs text-[#666] line-clamp-1 font-medium group-hover:text-[#888]">
+                        Technical deep dive into{" "}
+                        {lesson.module_name.toLowerCase()}. [Image of{" "}
+                        {lesson.module_name} flowchart]
+                      </p>
+                    </div>
+
+                    {/* Right Side Metadata/Action */}
+                    <div className="flex items-center gap-6">
+                      <div className="hidden sm:block text-right">
+                        <p className="text-[10px] font-black text-[#444] uppercase tracking-widest mb-1">
+                          Status
+                        </p>
+                        <p
+                          className={`text-xs font-bold ${
+                            isCompleted ? "text-emerald-500" : "text-[#666]"
+                          }`}
+                        >
+                          {isCompleted
+                            ? "Done"
+                            : isInProgress
+                            ? "Active"
+                            : "Locked"}
+                        </p>
+                      </div>
+
+                      <div
+                        className={`p-3 rounded-2xl border transition-all
+                        ${
+                          isCompleted
+                            ? "bg-[#181818] border-[#333] text-[#333]"
+                            : "bg-[#181818] border-[#333] text-[#444] group-hover:text-[#47a9ff] group-hover:border-[#47a9ff]/30"
+                        }`}
+                      >
+                        <Play className="w-5 h-5 fill-current" />
+                      </div>
+                    </div>
+                  </Link>
+                );
+              })}
             </div>
           </section>
         ))}
