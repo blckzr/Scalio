@@ -24,8 +24,16 @@ app.use(express.urlencoded({ extended: true }));
 app.use(morgan("dev"));
 
 
-// Routes
-app.use("/api", routes);
+// Combined routes from both branches
+app.use("/api", routes); // All legacy and modular endpoints
+// Course/lesson/progress endpoints from feature/course
+app.use('/api/users', require('./routes/user.routes'));
+app.use('/api/admin', require('./routes/admin.routes'));
+app.use('/api/auth', require('./routes/auth.routes'));
+app.use('/api/paths', require('./routes/paths.routes'));
+app.use('/api/lessons', require('./routes/lessons.routes'));
+app.use('/api/progress', require('./routes/progress.routes'));
+app.use('/api/sessions', require('./routes/studySessions.routes'));
 
 // Health check endpoint
 app.get("/health", (req, res) => {
