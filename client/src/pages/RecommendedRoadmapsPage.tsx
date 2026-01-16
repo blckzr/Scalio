@@ -1,10 +1,10 @@
-import React, { useState, useEffect } from 'react';
-import { api } from '../lib/api';
+import { useState, useEffect } from 'react';
+import api from '../lib/api';
 
 const RecommendedRoadmapsPage = () => {
-    const [roadmaps, setRoadmaps] = useState([]);
+    const [roadmaps, setRoadmaps] = useState<Array<{ template_id: string; title: string; description: string }>>([]);
     const [loading, setLoading] = useState(true);
-    const [error, setError] = useState(null);
+    const [error, setError] = useState<string | null>(null);
 
     useEffect(() => {
         const fetchRecommendedRoadmaps = async () => {
@@ -12,7 +12,7 @@ const RecommendedRoadmapsPage = () => {
                 const response = await api.get('/users/recommended-roadmaps');
                 setRoadmaps(response.data.recommendedRoadmaps);
             } catch (err) {
-                setError(err.message);
+                setError((err as Error).message);
             } finally {
                 setLoading(false);
             }
