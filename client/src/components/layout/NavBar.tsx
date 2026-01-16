@@ -3,6 +3,7 @@ import { Link, NavLink } from "react-router-dom";
 import { User, LogOut, Settings } from "lucide-react";
 import logo from "./logo.png"; 
 import api from "../../lib/api"; // Import your Axios instance
+import logo from "./logo.png";
 
 const Navbar = () => {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
@@ -62,12 +63,11 @@ const Navbar = () => {
   return (
     <nav className="bg-transparent px-8 py-6 sticky top-0 z-50">
       <div className="max-w-7xl mx-auto flex justify-between items-center">
-        
         <Link to="/" className="flex items-center gap-3 group">
-          <img 
-            src={logo} 
-            alt="Logo" 
-            className="h-10 w-auto object-contain transition-transform group-hover:scale-105" 
+          <img
+            src={logo}
+            alt="Logo"
+            className="h-10 w-auto object-contain transition-transform group-hover:scale-105"
           />
           <span className="text-2xl font-bold text-white tracking-tight">
             Scalio
