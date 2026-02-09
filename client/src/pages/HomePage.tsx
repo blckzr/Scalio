@@ -6,7 +6,7 @@ const HomePage = () => {
       {/* --- HERO SECTION --- */}
       <section className="text-center space-y-6 pt-10">
         <div className="inline-block px-4 py-1.5 rounded-full border border-primary/30 bg-primary/10 text-primary text-sm font-medium mb-4">
-          🚀 AI-Powered Multi-Agent Study Assistant
+          Scale Smart, Not Hard.
         </div>
 
         <h1 className="text-5xl md:text-6xl font-bold text-secondary tracking-tight">

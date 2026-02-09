@@ -9,10 +9,10 @@ import AboutPage from "./pages/marketing/AboutPage";
 import ContactPage from "./pages/marketing/ContactPage";
 import PrivacyPage from "./pages/marketing/PrivacyPage";
 import TermsPage from "./pages/marketing/TermPage";
-import LearnPage from "./pages/LearnPage"; 
-import CoursePage from "./pages/CoursePage"; 
-import LessonPage from "./pages/LessonPage";
-
+import LearnPage from "./pages/LearnPage";
+import CoursePage from "./pages/CoursePage";
+import RecommendedRoadmapsPage from "./pages/RecommendedRoadmapsPage";
+import LessonPage from "./pages/learn/learn";
 const user = {
   isConnected: true,
   role: "user",
@@ -30,16 +30,16 @@ function App() {
       <Route element={<ProtectedRoute isAllowed={user.isConnected} />}>
         <Route element={<MainLayout />}>
           <Route path="/" element={<HomePage />} />
-          
+
           {/* --- LEARNING PATH SYSTEM --- */}
-          {/* Main selection page */}
           <Route path="/learn" element={<LearnPage />} />
-          
-          {/* Specific Course Roadmap page */}
           <Route path="/learn/:courseId" element={<CoursePage />} />
-          
-          {/* Individual Lesson content page */}
-          <Route path="/learn/:courseId/lesson/:lessonId" element={<LessonPage />} />
+          <Route path="/learn/lesson/:lessonId" element={<LessonPage />} />
+
+          <Route
+            path="/recommended-roadmaps"
+            element={<RecommendedRoadmapsPage />}
+          />
 
           {/* --- USER & INFO ROUTES --- */}
           <Route
@@ -70,6 +70,7 @@ function App() {
         </Route>
       </Route>
 
+      {/* This is what was sending you to landing page before because the route was missing */}
       <Route path="*" element={<Navigate to="/" />} />
     </Routes>
   );
